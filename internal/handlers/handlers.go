@@ -28,6 +28,7 @@ func processUpdateMetricPostRequest(res http.ResponseWriter, req *http.Request) 
 
 	requestData := strings.Split(req.RequestURI[1:], "/")
 
+	res.Header().Set("Content-Type", "text/plain")
 	if len(requestData) != 4 {
 		res.WriteHeader(http.StatusNotFound)
 		return
@@ -47,6 +48,7 @@ func processUpdateMetricPostRequest(res http.ResponseWriter, req *http.Request) 
 }
 
 func processBadRequest(res http.ResponseWriter) {
+	res.Header().Set("Content-Type", "text/plain")
 	res.WriteHeader(http.StatusBadRequest)
 	res.Write([]byte("Bad request"))
 }
