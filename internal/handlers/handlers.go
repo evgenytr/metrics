@@ -42,7 +42,7 @@ func processUpdateMetricPostRequest(res http.ResponseWriter, req *http.Request) 
 		processBadRequest(res)
 		return
 	}
-
+	fmt.Println(req.RequestURI)
 	res.WriteHeader(http.StatusOK)
 }
 
