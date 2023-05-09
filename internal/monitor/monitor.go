@@ -45,11 +45,11 @@ func GetNewMonitor() *Monitor {
 	return &Monitor{}
 }
 
-func (m Monitor) ResetPollCount() {
+func (m *Monitor) ResetPollCount() {
 	m.PollCount = 0
 }
 
-func (m Monitor) PollMetrics() (err error) {
+func (m *Monitor) PollMetrics() (err error) {
 	fmt.Println("pollMetrics")
 	var rtm runtime.MemStats
 	runtime.ReadMemStats(&rtm)
@@ -86,7 +86,7 @@ func (m Monitor) PollMetrics() (err error) {
 	return
 }
 
-func (m Monitor) ReportMetrics(host, port string) (err error) {
+func (m *Monitor) ReportMetrics(host, port string) (err error) {
 	fmt.Println("reportMetrics")
 	var hostAddress = fmt.Sprintf("http://%v:%v", host, port)
 	err = reportUint64Metric("gauge", "Alloc", m.Alloc, hostAddress)
