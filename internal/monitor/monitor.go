@@ -45,11 +45,12 @@ func GetNewMonitor() *Monitor {
 	return &Monitor{}
 }
 
-func (m *Monitor) ResetPollCount() {
+func (m *Monitor) ResetPollCount() (monitor *Monitor) {
 	m.PollCount = 0
+	return m
 }
 
-func (m *Monitor) PollMetrics() (err error) {
+func (m *Monitor) PollMetrics() (monitor *Monitor, err error) {
 	fmt.Println("pollMetrics")
 	var rtm runtime.MemStats
 	runtime.ReadMemStats(&rtm)
@@ -83,7 +84,7 @@ func (m *Monitor) PollMetrics() (err error) {
 
 	m.PollCount++
 	m.RandomValue = rand.Float64()
-	return
+	return m, err
 }
 
 func (m *Monitor) ReportMetrics(host, port string) (err error) {
