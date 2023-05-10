@@ -30,7 +30,7 @@ func main() {
 	flag.Parse()
 
 	var currMetrics Monitor = monitor.GetNewMonitor()
-	var errChannel chan error = make(chan error)
+	var errChannel = make(chan error)
 	hostAddress := fmt.Sprintf("http://%v", *host)
 	go pollMetrics(*pollInterval, currMetrics, errChannel)
 	go reportMetrics(*reportInterval, currMetrics, hostAddress, errChannel)
@@ -39,11 +39,10 @@ func main() {
 
 	if err != nil {
 		log.Fatalln(err)
-		panic(err)
 	}
 }
 
-func pollMetrics(pollInterval float64, currMetrics Monitor, errChannel chan) {
+func pollMetrics(pollInterval float64, currMetrics Monitor, errChannel chan error) {
 	for {
 		time.Sleep(time.Duration(pollInterval) * time.Second)
 		err := currMetrics.PollMetrics()
@@ -55,7 +54,7 @@ func pollMetrics(pollInterval float64, currMetrics Monitor, errChannel chan) {
 	}
 }
 
-func reportMetrics(reportInterval float64, currMetrics Monitor, host string, errChannel chan) {
+func reportMetrics(reportInterval float64, currMetrics Monitor, host string, errChannel chan error) {
 	for {
 		time.Sleep(time.Duration(reportInterval) * time.Second)
 		err := currMetrics.ReportMetrics(host)

@@ -27,6 +27,5 @@ func main() {
 	err := http.ListenAndServe(*host, r)
 	if err != nil {
 		log.Fatalln(err)
-		panic(err)
 	}
 }
