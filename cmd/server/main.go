@@ -28,7 +28,7 @@ func main() {
 	flag.Parse()
 
 	if cfg.host != "" {
-		*host = cfg.host
+		host = &cfg.host
 	}
 
 	r := chi.NewRouter()

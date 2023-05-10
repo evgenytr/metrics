@@ -40,15 +40,15 @@ func main() {
 	flag.Parse()
 
 	if cfg.host != "" {
-		*host = cfg.host
+		host = &cfg.host
 	}
 
 	if cfg.pollInterval != 0 {
-		*pollInterval = cfg.pollInterval
+		pollInterval = &cfg.pollInterval
 	}
 
 	if cfg.reportInterval != 0 {
-		*reportInterval = cfg.reportInterval
+		reportInterval = &cfg.reportInterval
 	}
 
 	var currMetrics Monitor = monitor.GetNewMonitor()
