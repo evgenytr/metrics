@@ -43,7 +43,7 @@ func main() {
 	}
 }
 
-func pollMetrics(pollInterval float64, currMetrics Monitor, errChannel chan error) {
+func pollMetrics(pollInterval float64, currMetrics Monitor, errChannel chan) {
 	for {
 		time.Sleep(time.Duration(pollInterval) * time.Second)
 		err := currMetrics.PollMetrics()
@@ -55,7 +55,7 @@ func pollMetrics(pollInterval float64, currMetrics Monitor, errChannel chan erro
 	}
 }
 
-func reportMetrics(reportInterval float64, currMetrics Monitor, host string, errChannel chan error) {
+func reportMetrics(reportInterval float64, currMetrics Monitor, host string, errChannel chan) {
 	for {
 		time.Sleep(time.Duration(reportInterval) * time.Second)
 		err := currMetrics.ReportMetrics(host)
