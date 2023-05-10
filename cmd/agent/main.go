@@ -1,43 +1,69 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"github.com/evgenytr/metrics.git/internal/monitor"
 	"log"
 	"time"
 )
 
-var host = "localhost"
-var port = "8080"
-
 type Monitor interface {
 	PollMetrics() error
-	ReportMetrics(host, port string) error
+	ReportMetrics(host string) error
 	ResetPollCount()
 }
 
+var (
+	host           *string
+	pollInterval   *float64
+	reportInterval *float64
+)
+
+func init() {
+	host = flag.String("a", "localhost:8080", "host address")
+	pollInterval = flag.Float64("p", 2, "metrics polling interval")
+	reportInterval = flag.Float64("r", 10, "metrics reporting interval")
+}
+
 func main() {
-	counter := 0
-	pollInterval := 2 * time.Second
-	//reportInterval := 10 * time.Second
+	flag.Parse()
+
 	var currMetrics Monitor = monitor.GetNewMonitor()
+	var errChannel chan error = make(chan error)
+	hostAddress := fmt.Sprintf("http://%v", *host)
+	go pollMetrics(*pollInterval, currMetrics, errChannel)
+	go reportMetrics(*reportInterval, currMetrics, hostAddress, errChannel)
 
+	err := <-errChannel
+
+	if err != nil {
+		log.Fatalln(err)
+		panic(err)
+	}
+}
+
+func pollMetrics(pollInterval float64, currMetrics Monitor, errChannel chan error) {
 	for {
-		time.Sleep(pollInterval)
-		counter++
+		time.Sleep(time.Duration(pollInterval) * time.Second)
 		err := currMetrics.PollMetrics()
-		if err != nil {
-			log.Fatalln(err)
-			panic(err)
-		}
-		if counter == 5 {
-			counter = 0
-			err = currMetrics.ReportMetrics(host, port)
-			if err != nil {
-				log.Fatalln(err)
-				panic(err)
-			}
-			currMetrics.ResetPollCount()
-		}
 
+		if err != nil {
+			errChannel <- err
+			return
+		}
+	}
+}
+
+func reportMetrics(reportInterval float64, currMetrics Monitor, host string, errChannel chan error) {
+	for {
+		time.Sleep(time.Duration(reportInterval) * time.Second)
+		err := currMetrics.ReportMetrics(host)
+
+		if err != nil {
+			errChannel <- err
+			return
+		}
+		currMetrics.ResetPollCount()
 	}
 }

@@ -86,9 +86,9 @@ func (m *Monitor) PollMetrics() (err error) {
 	return
 }
 
-func (m *Monitor) ReportMetrics(host, port string) (err error) {
+func (m *Monitor) ReportMetrics(hostAddress string) (err error) {
 	fmt.Println("reportMetrics")
-	var hostAddress = fmt.Sprintf("http://%v:%v", host, port)
+
 	err = reportUint64Metric("gauge", "Alloc", m.Alloc, hostAddress)
 	if err != nil {
 		return
