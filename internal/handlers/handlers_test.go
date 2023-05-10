@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestProcessRequest(t *testing.T) {
+func TestProcessPostUpdateRequest(t *testing.T) {
 	type want struct {
 		code        int
 		contentType string
@@ -104,7 +104,7 @@ func TestProcessRequest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.method, tt.request, nil)
 			w := httptest.NewRecorder()
-			ProcessRequest(w, request)
+			ProcessPostUpdateRequest(w, request)
 			res := w.Result()
 			assert.Equal(t, tt.want.code, res.StatusCode)
 			assert.Equal(t, tt.want.contentType, res.Header.Get("Content-Type"))

@@ -2,8 +2,8 @@ package monitor
 
 import (
 	"fmt"
+	"github.com/go-resty/resty/v2"
 	"math/rand"
-	"net/http"
 	"runtime"
 )
 
@@ -212,19 +212,27 @@ func (m *Monitor) ReportMetrics(host, port string) (err error) {
 }
 
 func reportUint64Metric(metricType, name string, value uint64, hostAddress string) (err error) {
-	response, err := http.Post(fmt.Sprintf("%v/update/%v/%v/%v", hostAddress, metricType, name, value), "text/plain", nil)
-	response.Body.Close()
+
+	client := resty.New()
+	_, err = client.R().
+		SetHeader("Content-Type", "text/plain").
+		Post(fmt.Sprintf("%v/update/%v/%v/%v", hostAddress, metricType, name, value))
+
 	return
 }
 
 func reportFloat64Metric(metricType, name string, value float64, hostAddress string) (err error) {
-	response, err := http.Post(fmt.Sprintf("%v/update/%v/%v/%v", hostAddress, metricType, name, value), "text/plain", nil)
-	response.Body.Close()
+	client := resty.New()
+	_, err = client.R().
+		SetHeader("Content-Type", "text/plain").
+		Post(fmt.Sprintf("%v/update/%v/%v/%v", hostAddress, metricType, name, value))
 	return
 }
 
 func reportUint32Metric(metricType, name string, value uint32, hostAddress string) (err error) {
-	response, err := http.Post(fmt.Sprintf("%v/update/%v/%v/%v", hostAddress, metricType, name, value), "text/plain", nil)
-	response.Body.Close()
+	client := resty.New()
+	_, err = client.R().
+		SetHeader("Content-Type", "text/plain").
+		Post(fmt.Sprintf("%v/update/%v/%v/%v", hostAddress, metricType, name, value))
 	return
 }

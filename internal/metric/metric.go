@@ -13,6 +13,7 @@ type Metric struct {
 }
 
 func Create(metricType, name, value string) (newMetric Metric, err error) {
+	fmt.Println("Metric Create")
 	newMetric = Metric{
 		name:       name,
 		metricType: metricType,
@@ -21,7 +22,23 @@ func Create(metricType, name, value string) (newMetric Metric, err error) {
 	return
 }
 
+func (metric *Metric) GetValue() (value string) {
+
+	switch metric.metricType {
+	case "gauge":
+		value = fmt.Sprint(metric.gauge)
+	case "counter":
+		value = fmt.Sprint(metric.counter)
+	}
+	return
+}
+
+func (metric *Metric) GetType() (value string) {
+	return metric.metricType
+}
+
 func (metric *Metric) Add(metricType, value string) error {
+	fmt.Println("Metric Add")
 	if metric.metricType != metricType {
 		return fmt.Errorf("metric type mismatch")
 	}
