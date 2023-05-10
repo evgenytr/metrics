@@ -16,9 +16,9 @@ type Monitor interface {
 }
 
 type Config struct {
-	host           string  `env:"ADDRESS"`
-	reportInterval float64 `env:"REPORT_INTERVAL"`
-	pollInterval   float64 `env:"POLL_INTERVAL"`
+	Host           string  `env:"ADDRESS"`
+	ReportInterval float64 `env:"REPORT_INTERVAL"`
+	PollInterval   float64 `env:"POLL_INTERVAL"`
 }
 
 var (
@@ -36,19 +36,18 @@ func init() {
 func main() {
 	var cfg Config
 	_ = env.Parse(&cfg)
-
 	flag.Parse()
 
-	if cfg.host != "" {
-		host = &cfg.host
+	if cfg.Host != "" {
+		host = &(cfg.Host)
 	}
 
-	if cfg.pollInterval != 0 {
-		pollInterval = &cfg.pollInterval
+	if cfg.PollInterval != 0 {
+		pollInterval = &(cfg.PollInterval)
 	}
 
-	if cfg.reportInterval != 0 {
-		reportInterval = &cfg.reportInterval
+	if cfg.ReportInterval != 0 {
+		reportInterval = &(cfg.ReportInterval)
 	}
 
 	var currMetrics Monitor = monitor.GetNewMonitor()

@@ -10,7 +10,7 @@ import (
 )
 
 type Config struct {
-	host string `env:"ADDRESS"`
+	Host string `env:"ADDRESS"`
 }
 
 var (
@@ -27,8 +27,8 @@ func main() {
 
 	flag.Parse()
 
-	if cfg.host != "" {
-		host = &cfg.host
+	if cfg.Host != "" {
+		host = &(cfg.Host)
 	}
 
 	r := chi.NewRouter()
