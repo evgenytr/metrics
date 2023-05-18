@@ -44,19 +44,17 @@ func main() {
 	go reportMetrics(ctx, *reportInterval, currMetrics, hostAddress)
 
 	for {
-		select {
-		case <-ctx.Done():
-			err := context.Cause(ctx)
-			if err != nil {
-				log.Fatalln(err)
-			}
+		<-ctx.Done()
+		err := context.Cause(ctx)
+		if err != nil {
+			log.Fatalln(err)
 		}
 	}
 
 }
 
 func pollMetrics(ctx context.Context, pollInterval float64, currMetrics monitor.Monitor) {
-	ctx, cancelCtx := context.WithCancelCause(ctx)
+	_, cancelCtx := context.WithCancelCause(ctx)
 	for {
 		time.Sleep(time.Duration(pollInterval) * time.Second)
 		err := currMetrics.PollMetrics()
@@ -69,7 +67,7 @@ func pollMetrics(ctx context.Context, pollInterval float64, currMetrics monitor.
 }
 
 func reportMetrics(ctx context.Context, reportInterval float64, currMetrics monitor.Monitor, host string) {
-	ctx, cancelCtx := context.WithCancelCause(ctx)
+	_, cancelCtx := context.WithCancelCause(ctx)
 	for {
 		time.Sleep(time.Duration(reportInterval) * time.Second)
 		err := currMetrics.ReportMetrics(host)
