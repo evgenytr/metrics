@@ -12,9 +12,9 @@ type Metric struct {
 	counter    int64
 }
 
-func Create(metricType, name, value string) (newMetric Metric, err error) {
+func Create(metricType, name, value string) (newMetric *Metric, err error) {
 	fmt.Println("Metric Create")
-	newMetric = Metric{
+	newMetric = &Metric{
 		name:       name,
 		metricType: metricType,
 	}

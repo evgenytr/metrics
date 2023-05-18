@@ -7,14 +7,8 @@ import (
 	"strings"
 )
 
-type Storage interface {
-	Update(metricType, name, value string) error
-	ReadValue(metricType, name string) (string, error)
-	ListAll() (map[string]string, error)
-}
-
 var (
-	storage Storage = memstorage.GetNewStorage()
+	storage = memstorage.NewStorage()
 )
 
 func ProcessPostUpdateRequest(res http.ResponseWriter, req *http.Request) {
@@ -34,7 +28,7 @@ func ProcessPostUpdateRequest(res http.ResponseWriter, req *http.Request) {
 	err := storage.Update(metricType, metricName, metricValue)
 	fmt.Println(err)
 	if err != nil {
-		processBadRequest(res)
+		processBadRequest(res, err)
 		return
 	}
 	res.WriteHeader(http.StatusOK)
@@ -53,7 +47,7 @@ func ProcessGetValueRequest(res http.ResponseWriter, req *http.Request) {
 	metricName := requestData[2]
 
 	value, err := storage.ReadValue(metricType, metricName)
-	fmt.Println(err)
+
 	if err != nil {
 		res.WriteHeader(http.StatusNotFound)
 		return
@@ -67,9 +61,9 @@ func ProcessGetListRequest(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "text/plain")
 
 	metricsMap, err := storage.ListAll()
-	fmt.Println(err)
+
 	if err != nil {
-		processBadRequest(res)
+		processBadRequest(res, err)
 		return
 	}
 	for key, value := range metricsMap {
@@ -79,8 +73,8 @@ func ProcessGetListRequest(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusOK)
 }
 
-func processBadRequest(res http.ResponseWriter) {
+func processBadRequest(res http.ResponseWriter, err error) {
 	res.Header().Set("Content-Type", "text/plain")
 	res.WriteHeader(http.StatusBadRequest)
-	res.Write([]byte("Bad request"))
+	res.Write([]byte(fmt.Sprintf("Bad request, error %v", err)))
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"github.com/caarlos0/env/v6"
@@ -9,31 +10,15 @@ import (
 	"time"
 )
 
-type Monitor interface {
-	PollMetrics() error
-	ReportMetrics(host string) error
-	ResetPollCount()
-}
-
 type Config struct {
 	Host           string  `env:"ADDRESS"`
 	ReportInterval float64 `env:"REPORT_INTERVAL"`
 	PollInterval   float64 `env:"POLL_INTERVAL"`
 }
 
-var (
-	host           *string
-	pollInterval   *float64
-	reportInterval *float64
-)
-
-func init() {
-	host = flag.String("a", "localhost:8080", "host address")
-	pollInterval = flag.Float64("p", 2, "metrics polling interval")
-	reportInterval = flag.Float64("r", 10, "metrics reporting interval")
-}
-
 func main() {
+
+	host, pollInterval, reportInterval := getFlags()
 	var cfg Config
 	_ = env.Parse(&cfg)
 	flag.Parse()
@@ -50,40 +35,57 @@ func main() {
 		reportInterval = &(cfg.ReportInterval)
 	}
 
-	var currMetrics Monitor = monitor.GetNewMonitor()
-	var errChannel = make(chan error)
+	var currMetrics = monitor.NewMonitor()
+
 	hostAddress := fmt.Sprintf("http://%v", *host)
-	go pollMetrics(*pollInterval, currMetrics, errChannel)
-	go reportMetrics(*reportInterval, currMetrics, hostAddress, errChannel)
 
-	err := <-errChannel
+	ctx := context.Background()
+	go pollMetrics(ctx, *pollInterval, currMetrics)
+	go reportMetrics(ctx, *reportInterval, currMetrics, hostAddress)
 
-	if err != nil {
-		log.Fatalln(err)
+	for {
+		select {
+		case <-ctx.Done():
+			err := context.Cause(ctx)
+			if err != nil {
+				log.Fatalln(err)
+			}
+		}
 	}
+
 }
 
-func pollMetrics(pollInterval float64, currMetrics Monitor, errChannel chan error) {
+func pollMetrics(ctx context.Context, pollInterval float64, currMetrics monitor.Monitor) {
+	ctx, cancelCtx := context.WithCancelCause(ctx)
 	for {
 		time.Sleep(time.Duration(pollInterval) * time.Second)
 		err := currMetrics.PollMetrics()
 
 		if err != nil {
-			errChannel <- err
+			cancelCtx(err)
 			return
 		}
 	}
 }
 
-func reportMetrics(reportInterval float64, currMetrics Monitor, host string, errChannel chan error) {
+func reportMetrics(ctx context.Context, reportInterval float64, currMetrics monitor.Monitor, host string) {
+	ctx, cancelCtx := context.WithCancelCause(ctx)
 	for {
 		time.Sleep(time.Duration(reportInterval) * time.Second)
 		err := currMetrics.ReportMetrics(host)
 
 		if err != nil {
-			errChannel <- err
+			cancelCtx(err)
 			return
 		}
+
 		currMetrics.ResetPollCount()
 	}
+}
+
+func getFlags() (host *string, pollInterval, reportInterval *float64) {
+	host = flag.String("a", "localhost:8080", "host address")
+	pollInterval = flag.Float64("p", 2, "metrics polling interval")
+	reportInterval = flag.Float64("r", 10, "metrics reporting interval")
+	return
 }

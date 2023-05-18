@@ -13,15 +13,9 @@ type Config struct {
 	Host string `env:"ADDRESS"`
 }
 
-var (
-	host *string
-)
-
-func init() {
-	host = flag.String("a", "localhost:8080", "host address")
-}
-
 func main() {
+
+	host := getFlags()
 	var cfg Config
 	_ = env.Parse(&cfg)
 
@@ -40,4 +34,9 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+}
+
+func getFlags() (host *string) {
+	host = flag.String("a", "localhost:8080", "host address")
+	return
 }

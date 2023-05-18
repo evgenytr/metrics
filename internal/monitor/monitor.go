@@ -7,7 +7,7 @@ import (
 	"runtime"
 )
 
-type Monitor struct {
+type monitor struct {
 	Alloc,
 	BuckHashSys,
 	Frees,
@@ -41,15 +41,21 @@ type Monitor struct {
 	RandomValue float64
 }
 
-func GetNewMonitor() *Monitor {
-	return &Monitor{}
+type Monitor interface {
+	PollMetrics() error
+	ReportMetrics(host string) error
+	ResetPollCount()
 }
 
-func (m *Monitor) ResetPollCount() {
+func NewMonitor() Monitor {
+	return &monitor{}
+}
+
+func (m *monitor) ResetPollCount() {
 	m.PollCount = 0
 }
 
-func (m *Monitor) PollMetrics() (err error) {
+func (m *monitor) PollMetrics() (err error) {
 	fmt.Println("pollMetrics")
 	var rtm runtime.MemStats
 	runtime.ReadMemStats(&rtm)
@@ -86,7 +92,7 @@ func (m *Monitor) PollMetrics() (err error) {
 	return
 }
 
-func (m *Monitor) ReportMetrics(hostAddress string) (err error) {
+func (m *monitor) ReportMetrics(hostAddress string) (err error) {
 	fmt.Println("reportMetrics")
 
 	err = reportUint64Metric("gauge", "Alloc", m.Alloc, hostAddress)
