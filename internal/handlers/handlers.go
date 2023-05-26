@@ -4,28 +4,56 @@ import (
 	"fmt"
 	"github.com/evgenytr/metrics.git/internal/storage/memstorage"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
+type Storage interface {
+	Update(metricType, name, value string) error
+	ReadValue(metricType, name string) (string, error)
+	ListAll() (map[string]string, error)
+}
+
+type Options struct {
+	//storage layer
+	storage Storage
+}
+
 var (
-	storage = memstorage.NewStorage()
+	currOptions = &Options{
+		storage: memstorage.NewStorage(),
+	}
 )
 
 func ProcessPostUpdateRequest(res http.ResponseWriter, req *http.Request) {
 
+	const requiredRequestPathChunks = 5
+
 	res.Header().Set("Content-Type", "text/plain")
-	requestData := strings.Split(req.RequestURI[1:], "/")
-	if len(requestData) != 4 {
+
+	//validate URL
+	parsedURL, err := url.ParseRequestURI(req.RequestURI)
+	if err != nil {
+
+		processBadRequest(res, err)
+		return
+	}
+
+	requestPath := parsedURL.Path
+	fmt.Println(requestPath)
+	requestData := strings.Split(requestPath, "/")
+	fmt.Println(len(requestData))
+	if len(requestData) != requiredRequestPathChunks {
 		res.WriteHeader(http.StatusNotFound)
 		return
 	}
-	metricType := requestData[1]
-	metricName := requestData[2]
-	metricValue := requestData[3]
+	metricType := requestData[2]
+	metricName := requestData[3]
+	metricValue := requestData[4]
 
 	fmt.Println(metricType, metricName, metricValue)
 
-	err := storage.Update(metricType, metricName, metricValue)
+	err = currOptions.storage.Update(metricType, metricName, metricValue)
 	fmt.Println(err)
 	if err != nil {
 		processBadRequest(res, err)
@@ -38,15 +66,26 @@ func ProcessGetValueRequest(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Set("Content-Type", "text/plain")
 
-	requestData := strings.Split(req.RequestURI[1:], "/")
-	if len(requestData) != 3 {
+	const requiredRequestPathChunks = 4
+
+	//validate URL
+	parsedURL, err := url.ParseRequestURI(req.RequestURI)
+	if err != nil {
+		processBadRequest(res, err)
+		return
+	}
+
+	requestPath := parsedURL.Path
+
+	requestData := strings.Split(requestPath, "/")
+	if len(requestData) != requiredRequestPathChunks {
 		res.WriteHeader(http.StatusNotFound)
 		return
 	}
-	metricType := requestData[1]
-	metricName := requestData[2]
+	metricType := requestData[2]
+	metricName := requestData[3]
 
-	value, err := storage.ReadValue(metricType, metricName)
+	value, err := currOptions.storage.ReadValue(metricType, metricName)
 
 	if err != nil {
 		res.WriteHeader(http.StatusNotFound)
@@ -60,7 +99,7 @@ func ProcessGetListRequest(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Set("Content-Type", "text/plain")
 
-	metricsMap, err := storage.ListAll()
+	metricsMap, err := currOptions.storage.ListAll()
 
 	if err != nil {
 		processBadRequest(res, err)
@@ -77,4 +116,5 @@ func processBadRequest(res http.ResponseWriter, err error) {
 	res.Header().Set("Content-Type", "text/plain")
 	res.WriteHeader(http.StatusBadRequest)
 	res.Write([]byte(fmt.Sprintf("Bad request, error %v", err)))
+	fmt.Println(err)
 }

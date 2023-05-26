@@ -5,7 +5,7 @@ import (
 	"github.com/evgenytr/metrics.git/internal/metric"
 )
 
-type MemStorage struct {
+type memStorage struct {
 	metricsMap map[string]*metric.Metric
 }
 
@@ -16,12 +16,12 @@ type Storage interface {
 }
 
 func NewStorage() Storage {
-	return &MemStorage{
+	return &memStorage{
 		metricsMap: make(map[string]*metric.Metric),
 	}
 }
 
-func (ms MemStorage) Update(metricType, name, value string) (err error) {
+func (ms memStorage) Update(metricType, name, value string) (err error) {
 	if currMetric, ok := ms.metricsMap[name]; ok {
 		err = currMetric.Add(metricType, value)
 		if err != nil {
@@ -33,7 +33,7 @@ func (ms MemStorage) Update(metricType, name, value string) (err error) {
 	return
 }
 
-func (ms MemStorage) ReadValue(metricType, name string) (value string, err error) {
+func (ms memStorage) ReadValue(metricType, name string) (value string, err error) {
 	if currMetric, ok := ms.metricsMap[name]; ok {
 		if currMetric.GetType() != metricType {
 			err = fmt.Errorf("metric type mismatch")
@@ -45,7 +45,7 @@ func (ms MemStorage) ReadValue(metricType, name string) (value string, err error
 	}
 	return
 }
-func (ms MemStorage) ListAll() (metricsMap map[string]string, err error) {
+func (ms memStorage) ListAll() (metricsMap map[string]string, err error) {
 	metricsMap = make(map[string]string, len(ms.metricsMap))
 	for key, value := range ms.metricsMap {
 		metricsMap[key] = value.GetValue()

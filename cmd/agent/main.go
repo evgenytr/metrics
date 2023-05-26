@@ -5,26 +5,21 @@ import (
 	"flag"
 	"fmt"
 	"github.com/caarlos0/env/v6"
+	"github.com/evgenytr/metrics.git/internal/config"
 	"github.com/evgenytr/metrics.git/internal/monitor"
 	"log"
 	"time"
 )
 
-type Config struct {
-	Host           string  `env:"ADDRESS"`
-	ReportInterval float64 `env:"REPORT_INTERVAL"`
-	PollInterval   float64 `env:"POLL_INTERVAL"`
-}
-
 func main() {
 
 	host, pollInterval, reportInterval := getFlags()
-	var cfg Config
+	var cfg config.Config
 	_ = env.Parse(&cfg)
 	flag.Parse()
 
 	if cfg.Host != "" {
-		host = &(cfg.Host)
+		host = &cfg.Host
 	}
 
 	if cfg.PollInterval != 0 {
