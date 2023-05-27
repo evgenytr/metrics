@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/evgenytr/metrics.git/internal/storage/memstorage"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
@@ -100,11 +101,14 @@ func TestProcessPostUpdateRequest(t *testing.T) {
 			},
 		},
 	}
+	storage := memstorage.NewStorage()
+	h := NewBaseHandler(storage)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.method, tt.request, nil)
 			w := httptest.NewRecorder()
-			ProcessPostUpdateRequest(w, request)
+			h.ProcessPostUpdateRequest(w, request)
 			res := w.Result()
 			assert.Equal(t, tt.want.code, res.StatusCode)
 			assert.Equal(t, tt.want.contentType, res.Header.Get("Content-Type"))

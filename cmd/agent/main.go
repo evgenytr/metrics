@@ -14,7 +14,7 @@ import (
 func main() {
 
 	host, pollInterval, reportInterval := getFlags()
-	var cfg config.Config
+	var cfg config.AgentConfig
 	_ = env.Parse(&cfg)
 	flag.Parse()
 

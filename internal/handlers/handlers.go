@@ -8,24 +8,17 @@ import (
 	"strings"
 )
 
-type Storage interface {
-	Update(metricType, name, value string) error
-	ReadValue(metricType, name string) (string, error)
-	ListAll() (map[string]string, error)
+type BaseHandler struct {
+	storage memstorage.Storage
 }
 
-type Options struct {
-	//storage layer
-	storage Storage
-}
-
-var (
-	currOptions = &Options{
-		storage: memstorage.NewStorage(),
+func NewBaseHandler(storage memstorage.Storage) *BaseHandler {
+	return &BaseHandler{
+		storage: storage,
 	}
-)
+}
 
-func ProcessPostUpdateRequest(res http.ResponseWriter, req *http.Request) {
+func (h *BaseHandler) ProcessPostUpdateRequest(res http.ResponseWriter, req *http.Request) {
 
 	const requiredRequestPathChunks = 5
 
@@ -53,7 +46,7 @@ func ProcessPostUpdateRequest(res http.ResponseWriter, req *http.Request) {
 
 	fmt.Println(metricType, metricName, metricValue)
 
-	err = currOptions.storage.Update(metricType, metricName, metricValue)
+	err = h.storage.Update(metricType, metricName, metricValue)
 	fmt.Println(err)
 	if err != nil {
 		processBadRequest(res, err)
@@ -62,7 +55,7 @@ func ProcessPostUpdateRequest(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusOK)
 }
 
-func ProcessGetValueRequest(res http.ResponseWriter, req *http.Request) {
+func (h *BaseHandler) ProcessGetValueRequest(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Set("Content-Type", "text/plain")
 
@@ -85,7 +78,7 @@ func ProcessGetValueRequest(res http.ResponseWriter, req *http.Request) {
 	metricType := requestData[2]
 	metricName := requestData[3]
 
-	value, err := currOptions.storage.ReadValue(metricType, metricName)
+	value, err := h.storage.ReadValue(metricType, metricName)
 
 	if err != nil {
 		res.WriteHeader(http.StatusNotFound)
@@ -95,11 +88,11 @@ func ProcessGetValueRequest(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusOK)
 }
 
-func ProcessGetListRequest(res http.ResponseWriter, req *http.Request) {
+func (h *BaseHandler) ProcessGetListRequest(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Set("Content-Type", "text/plain")
 
-	metricsMap, err := currOptions.storage.ListAll()
+	metricsMap, err := h.storage.ListAll()
 
 	if err != nil {
 		processBadRequest(res, err)
