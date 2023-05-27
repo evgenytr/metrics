@@ -26,7 +26,7 @@ func (metric *Metric) GetValue() (value string) {
 
 	switch metric.metricType {
 	case "gauge":
-		value = strconv.FormatFloat(metric.gauge, 'f', 3, 64)
+		value = strconv.FormatFloat(metric.gauge, 'f', -1, 64)
 	case "counter":
 		value = strconv.FormatInt(metric.counter, 10)
 	}
