@@ -68,7 +68,7 @@ func (h *BaseHandler) ProcessPostValueJSONRequest(res http.ResponseWriter, req *
 		processBadRequest(res, err)
 		return
 	}
-
+	fmt.Println(currMetric)
 	switch currMetric.MType {
 	case "gauge":
 		currMetric.Value, err = h.storage.GetGaugeValue(currMetric.ID)
@@ -76,9 +76,12 @@ func (h *BaseHandler) ProcessPostValueJSONRequest(res http.ResponseWriter, req *
 		currMetric.Delta, err = h.storage.GetCounterValue(currMetric.ID)
 	default:
 		err = fmt.Errorf("metric type unknown %v", currMetric.MType)
+		processBadRequest(res, err)
+		return
 	}
 
 	if err != nil {
+		fmt.Println(err)
 		res.WriteHeader(http.StatusNotFound)
 		return
 	}

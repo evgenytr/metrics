@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"go.uber.org/zap"
-	"io"
 	"net/http"
 	"time"
 )
@@ -40,8 +39,6 @@ func WithLogging(logger *zap.SugaredLogger) func(next http.Handler) http.Handler
 			}
 			uri := req.RequestURI
 			method := req.Method
-			var bodyBytes []byte
-			bodyBytes, _ = io.ReadAll(req.Body)
 
 			next.ServeHTTP(&lw, req)
 			duration := time.Since(start)
@@ -51,7 +48,6 @@ func WithLogging(logger *zap.SugaredLogger) func(next http.Handler) http.Handler
 				"duration", duration,
 				"status", responseData.status,
 				"size", responseData.size,
-				"body", bodyBytes,
 			)
 		}
 		return http.HandlerFunc(logFn)
