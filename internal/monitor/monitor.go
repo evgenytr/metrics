@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"fmt"
+	"github.com/evgenytr/metrics.git/internal/metric"
 	"github.com/go-resty/resty/v2"
 	"math/rand"
 	"runtime"
@@ -196,11 +197,11 @@ func (m *monitor) ReportMetrics(hostAddress string) (err error) {
 		return
 	}
 
-	err = reportUint32Metric("gauge", "NumForcedGC", m.NumForcedGC, hostAddress)
+	err = reportUint64Metric("gauge", "NumForcedGC", uint64(m.NumForcedGC), hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint32Metric("gauge", "NumGC", m.NumGC, hostAddress)
+	err = reportUint64Metric("gauge", "NumGC", uint64(m.NumGC), hostAddress)
 	if err != nil {
 		return
 	}
@@ -217,28 +218,43 @@ func (m *monitor) ReportMetrics(hostAddress string) (err error) {
 	return
 }
 
-func reportUint64Metric(metricType, name string, value uint64, hostAddress string) (err error) {
-
-	client := resty.New()
-	_, err = client.R().
-		SetHeader("Content-Type", "text/plain").
-		Post(fmt.Sprintf("%v/update/%v/%v/%v", hostAddress, metricType, name, value))
-
-	return
-}
-
 func reportFloat64Metric(metricType, name string, value float64, hostAddress string) (err error) {
-	client := resty.New()
-	_, err = client.R().
-		SetHeader("Content-Type", "text/plain").
-		Post(fmt.Sprintf("%v/update/%v/%v/%v", hostAddress, metricType, name, value))
-	return
+	currMetric := &metric.Metrics{ID: name, MType: metricType}
+	switch metricType {
+	case "gauge":
+		currMetric.Value = &value
+	case "counter":
+		var intValue = int64(value)
+		currMetric.Delta = &intValue
+	default:
+		err = fmt.Errorf("metric type not supported")
+		return
+	}
+	return postJSONMetric(currMetric, hostAddress)
 }
 
-func reportUint32Metric(metricType, name string, value uint32, hostAddress string) (err error) {
+func reportUint64Metric(metricType, name string, value uint64, hostAddress string) (err error) {
+	currMetric := &metric.Metrics{ID: name, MType: metricType}
+	switch metricType {
+	case "gauge":
+		var floatValue = float64(value)
+		currMetric.Value = &floatValue
+	case "counter":
+		var intValue = int64(value)
+		currMetric.Delta = &intValue
+	default:
+		err = fmt.Errorf("metric type not supported")
+		return
+	}
+	return postJSONMetric(currMetric, hostAddress)
+}
+
+func postJSONMetric(metrics *metric.Metrics, hostAddress string) (err error) {
+
 	client := resty.New()
 	_, err = client.R().
-		SetHeader("Content-Type", "text/plain").
-		Post(fmt.Sprintf("%v/update/%v/%v/%v", hostAddress, metricType, name, value))
+		SetBody(metrics).
+		Post(fmt.Sprintf("%v/update/", hostAddress))
+
 	return
 }

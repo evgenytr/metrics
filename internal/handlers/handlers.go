@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/evgenytr/metrics.git/internal/metric"
 	"github.com/evgenytr/metrics.git/internal/storage/memstorage"
 	"net/http"
 	"net/url"
@@ -18,6 +20,77 @@ func NewBaseHandler(storage memstorage.Storage) *BaseHandler {
 	}
 }
 
+func (h *BaseHandler) ProcessPostUpdateJSONRequest(res http.ResponseWriter, req *http.Request) {
+
+	res.Header().Set("Content-Type", "application/json")
+
+	dec := json.NewDecoder(req.Body)
+	var currMetric metric.Metrics
+
+	err := dec.Decode(&currMetric)
+	if err != nil {
+		processBadRequest(res, err)
+		return
+	}
+
+	switch currMetric.MType {
+	case "gauge":
+		currMetric.Value, err = h.storage.UpdateGauge(currMetric.ID, currMetric.Value)
+	case "counter":
+		currMetric.Delta, err = h.storage.UpdateCounter(currMetric.ID, currMetric.Delta)
+	default:
+		err = fmt.Errorf("metric type unknown %v", currMetric.MType)
+	}
+
+	if err != nil {
+		processBadRequest(res, err)
+		return
+	}
+
+	err = json.NewEncoder(res).Encode(currMetric)
+	if err != nil {
+		processBadRequest(res, err)
+		return
+	}
+
+	res.WriteHeader(http.StatusOK)
+}
+
+func (h *BaseHandler) ProcessPostValueJSONRequest(res http.ResponseWriter, req *http.Request) {
+
+	res.Header().Set("Content-Type", "application/json")
+
+	dec := json.NewDecoder(req.Body)
+	var currMetric metric.Metrics
+
+	err := dec.Decode(&currMetric)
+	if err != nil {
+		processBadRequest(res, err)
+		return
+	}
+
+	switch currMetric.MType {
+	case "gauge":
+		currMetric.Value, err = h.storage.GetGaugeValue(currMetric.ID)
+	case "counter":
+		currMetric.Delta, err = h.storage.GetCounterValue(currMetric.ID)
+	default:
+		err = fmt.Errorf("metric type unknown %v", currMetric.MType)
+	}
+
+	if err != nil {
+		res.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	err = json.NewEncoder(res).Encode(currMetric)
+	if err != nil {
+		processBadRequest(res, err)
+		return
+	}
+
+	res.WriteHeader(http.StatusOK)
+}
 func (h *BaseHandler) ProcessPostUpdateRequest(res http.ResponseWriter, req *http.Request) {
 
 	const requiredRequestPathChunks = 5
@@ -46,7 +119,7 @@ func (h *BaseHandler) ProcessPostUpdateRequest(res http.ResponseWriter, req *htt
 
 	fmt.Println(metricType, metricName, metricValue)
 
-	err = h.storage.Update(metricType, metricName, metricValue)
+	_, err = h.storage.Update(metricType, metricName, metricValue)
 	fmt.Println(err)
 	if err != nil {
 		processBadRequest(res, err)

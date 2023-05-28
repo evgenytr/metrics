@@ -28,6 +28,7 @@ func main() {
 	storage := memstorage.NewStorage()
 	h := handlers.NewBaseHandler(storage)
 
+	//TODO move logger to logging package
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		log.Fatalln(err)
@@ -39,9 +40,15 @@ func main() {
 	withLogging := middleware.WithLogging(sugar)
 
 	r := chi.NewRouter()
+
 	r.Use(withLogging)
+
+	r.Post("/update/", h.ProcessPostUpdateJSONRequest)
+	r.Post("/value/", h.ProcessPostValueJSONRequest)
+
 	r.Post("/update/{type}/{name}/{value}", h.ProcessPostUpdateRequest)
 	r.Get("/value/{type}/{name}", h.ProcessGetValueRequest)
+
 	r.Get("/", h.ProcessGetListRequest)
 
 	err = http.ListenAndServe(*host, r)
