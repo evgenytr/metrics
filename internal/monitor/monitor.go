@@ -230,7 +230,8 @@ func reportFloat64Metric(metricType, name string, value float64, hostAddress str
 		err = fmt.Errorf("metric type not supported")
 		return
 	}
-	return postJSONMetric(currMetric, hostAddress)
+	err = postJSONMetric(currMetric, hostAddress)
+	return
 }
 
 func reportUint64Metric(metricType, name string, value uint64, hostAddress string) (err error) {
@@ -246,7 +247,8 @@ func reportUint64Metric(metricType, name string, value uint64, hostAddress strin
 		err = fmt.Errorf("metric type not supported")
 		return
 	}
-	return postJSONMetric(currMetric, hostAddress)
+	err = postJSONMetric(currMetric, hostAddress)
+	return
 }
 
 func postJSONMetric(metrics *metric.Metrics, hostAddress string) (err error) {
