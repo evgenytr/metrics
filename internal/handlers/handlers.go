@@ -100,7 +100,7 @@ func (h *BaseHandler) ProcessPostUpdateRequest(res http.ResponseWriter, req *htt
 
 	const requiredRequestPathChunks = 5
 
-	res.Header().Set("Content-Type", "text/html")
+	res.Header().Set("Content-Type", "text/plain")
 
 	//validate URL
 	parsedURL, err := url.ParseRequestURI(req.RequestURI)
@@ -135,7 +135,7 @@ func (h *BaseHandler) ProcessPostUpdateRequest(res http.ResponseWriter, req *htt
 
 func (h *BaseHandler) ProcessGetValueRequest(res http.ResponseWriter, req *http.Request) {
 
-	res.Header().Set("Content-Type", "text/html")
+	res.Header().Set("Content-Type", "text/plain")
 
 	const requiredRequestPathChunks = 4
 
@@ -184,7 +184,7 @@ func (h *BaseHandler) ProcessGetListRequest(res http.ResponseWriter, req *http.R
 }
 
 func processBadRequest(res http.ResponseWriter, err error) {
-	res.Header().Set("Content-Type", "text/html")
+	res.Header().Set("Content-Type", "text/plain")
 	res.WriteHeader(http.StatusBadRequest)
 	res.Write([]byte(fmt.Sprintf("Bad request, error %v", err)))
 	fmt.Println(err)
