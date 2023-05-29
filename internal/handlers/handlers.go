@@ -68,7 +68,9 @@ func (h *BaseHandler) ProcessPostValueJSONRequest(res http.ResponseWriter, req *
 		processBadRequest(res, err)
 		return
 	}
+
 	fmt.Println(currMetric)
+
 	switch currMetric.MType {
 	case "gauge":
 		currMetric.Value, err = h.storage.GetGaugeValue(currMetric.ID)

@@ -255,8 +255,9 @@ func postJSONMetric(metrics *metric.Metrics, hostAddress string) (err error) {
 
 	client := resty.New()
 	_, err = client.R().
+		SetHeader("Content-Type", "application/json").
 		SetBody(metrics).
 		Post(fmt.Sprintf("%v/update/", hostAddress))
 
-	return
+	return nil
 }
