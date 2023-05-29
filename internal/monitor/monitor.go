@@ -259,5 +259,8 @@ func postJSONMetric(metrics *metric.Metrics, hostAddress string) (err error) {
 		SetBody(metrics).
 		Post(fmt.Sprintf("%v/update/", hostAddress))
 
+	if err != nil {
+		fmt.Println(err)
+	}
 	return nil
 }
