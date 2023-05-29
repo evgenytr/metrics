@@ -1,8 +1,8 @@
 package main
 
 import (
-	"flag"
-	"github.com/caarlos0/env/v6"
+	"context"
+	"fmt"
 	"github.com/evgenytr/metrics.git/internal/config"
 	"github.com/evgenytr/metrics.git/internal/handlers"
 	"github.com/evgenytr/metrics.git/internal/middleware"
@@ -12,34 +12,43 @@ import (
 	"go.uber.org/zap"
 	"log"
 	"net/http"
+	"time"
 )
 
 func main() {
 
-	host := getFlags()
-	var cfg config.ServerConfig
-	_ = env.Parse(&cfg)
+	host, storeInterval, fileStoragePath, restore := config.GetServerConfig()
 
-	flag.Parse()
-
-	if cfg.Host != "" {
-		host = &cfg.Host
-	}
+	fmt.Println(*host, *storeInterval, *fileStoragePath, *restore)
 
 	storage := memstorage.NewStorage()
 	h := handlers.NewBaseHandler(storage)
 
-	//TODO move logger to logging package
+	//TODO move logger to logging package (?)
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		log.Fatalln(err)
 	}
 	defer logger.Sync()
-
 	sugar := logger.Sugar()
 
 	withLogging := middleware.WithLogging(sugar)
 
+	ctx := context.Background()
+	if *fileStoragePath != "" {
+		if *restore {
+			err = storage.LoadMetrics(fileStoragePath)
+			//non fatal error
+			if err != nil {
+				log.Print(err)
+			}
+		}
+
+		if *storeInterval != 0 {
+			go storeMetrics(ctx, storeInterval, fileStoragePath, storage)
+		}
+
+	}
 	r := chi.NewRouter()
 
 	r.Use(withLogging)
@@ -53,13 +62,39 @@ func main() {
 
 	r.Get("/", h.ProcessGetListRequest)
 
-	err = http.ListenAndServe(*host, r)
-	if err != nil {
-		log.Fatalln(err)
+	go listenAndServe(ctx, host, r)
+
+	for {
+		<-ctx.Done()
+		err := context.Cause(ctx)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		if *fileStoragePath != "" {
+			storage.StoreMetrics(fileStoragePath)
+		}
 	}
 }
 
-func getFlags() (host *string) {
-	host = flag.String("a", "localhost:8080", "host address")
-	return
+func listenAndServe(ctx context.Context, host *string, r *chi.Mux) {
+	_, cancelCtx := context.WithCancelCause(ctx)
+	err := http.ListenAndServe(*host, r)
+	if err != nil {
+		fmt.Println("listenAndServe err", err)
+		cancelCtx(err)
+	}
+}
+
+func storeMetrics(ctx context.Context, storeInterval *float64, fileStoragePath *string, storage memstorage.Storage) {
+	_, cancelCtx := context.WithCancelCause(ctx)
+	for {
+		time.Sleep(time.Duration(*storeInterval) * time.Second)
+		err := storage.StoreMetrics(fileStoragePath)
+
+		if err != nil {
+			fmt.Println("store metrics err")
+			cancelCtx(err)
+			return
+		}
+	}
 }

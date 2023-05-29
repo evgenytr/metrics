@@ -1,8 +1,10 @@
 package memstorage
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/evgenytr/metrics.git/internal/metric"
+	"os"
 )
 
 type memStorage struct {
@@ -10,6 +12,8 @@ type memStorage struct {
 }
 
 type Storage interface {
+	LoadMetrics(fileStoragePath *string) error
+	StoreMetrics(fileStoragePath *string) error
 	UpdateGauge(name string, value *float64) (*float64, error)
 	UpdateCounter(name string, value *int64) (*int64, error)
 	GetGaugeValue(name string) (*float64, error)
@@ -23,6 +27,34 @@ func NewStorage() Storage {
 	return &memStorage{
 		metricsMap: make(map[string]*metric.Metric),
 	}
+}
+
+func (ms memStorage) LoadMetrics(fileStoragePath *string) (err error) {
+	fmt.Println("load metrics")
+	data, err := os.ReadFile(*fileStoragePath)
+	if err != nil {
+		return
+	}
+
+	var metricsMap map[string]*metric.Metric
+	metricsMap = make(map[string]*metric.Metric)
+
+	if err = json.Unmarshal(data, &metricsMap); err != nil {
+		return
+	}
+	//TODO validate and load per metric
+	ms.metricsMap = metricsMap
+	return
+}
+
+func (ms memStorage) StoreMetrics(fileStoragePath *string) (err error) {
+	fmt.Println("store metrics")
+	jsonRes, err := json.Marshal(ms.metricsMap)
+	if err != nil {
+		return
+	}
+	os.WriteFile(*fileStoragePath, jsonRes, 0666)
+	return
 }
 
 func (ms memStorage) Update(metricType, name, value string) (newValue string, err error) {

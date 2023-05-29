@@ -5,11 +5,12 @@ import (
 	"strconv"
 )
 
+// TODO having 2 structs is redundant, keep only one
 type Metric struct {
-	name       string
-	metricType string
-	gauge      float64
-	counter    int64
+	Name       string  `json:"id"`
+	MetricType string  `json:"type"`
+	Gauge      float64 `json:"gauge,omitempty"`
+	Counter    int64   `json:"counter,omitempty"`
 }
 
 type Metrics struct {
@@ -22,8 +23,8 @@ type Metrics struct {
 func Create(metricType, name, value string) (newMetric *Metric, err error) {
 	fmt.Println("Metric Create")
 	newMetric = &Metric{
-		name:       name,
-		metricType: metricType,
+		Name:       name,
+		MetricType: metricType,
 	}
 	_, err = newMetric.Add(metricType, value)
 	return
@@ -32,9 +33,9 @@ func Create(metricType, name, value string) (newMetric *Metric, err error) {
 func CreateGauge(name string, value *float64) (newMetric *Metric, err error) {
 	fmt.Println("Gauge Metric Create")
 	newMetric = &Metric{
-		name:       name,
-		metricType: "gauge",
-		gauge:      *value,
+		Name:       name,
+		MetricType: "gauge",
+		Gauge:      *value,
 	}
 	return
 }
@@ -42,44 +43,44 @@ func CreateGauge(name string, value *float64) (newMetric *Metric, err error) {
 func CreateCounter(name string, value *int64) (newMetric *Metric, err error) {
 	fmt.Println("Counter Metric Create")
 	newMetric = &Metric{
-		name:       name,
-		metricType: "counter",
-		counter:    *value,
+		Name:       name,
+		MetricType: "counter",
+		Counter:    *value,
 	}
 	return
 }
 
 func (metric *Metric) GetValue() (value string) {
 
-	switch metric.metricType {
+	switch metric.MetricType {
 	case "gauge":
-		value = strconv.FormatFloat(metric.gauge, 'f', -1, 64)
+		value = strconv.FormatFloat(metric.Gauge, 'f', -1, 64)
 	case "counter":
-		value = strconv.FormatInt(metric.counter, 10)
+		value = strconv.FormatInt(metric.Counter, 10)
 	}
 	return
 }
 
 func (metric *Metric) GetGaugeValue() (value *float64) {
-	return &metric.gauge
+	return &metric.Gauge
 }
 
 func (metric *Metric) GetCounterValue() (value *int64) {
-	return &metric.counter
+	return &metric.Counter
 }
 
 func (metric *Metric) GetType() (value string) {
-	return metric.metricType
+	return metric.MetricType
 }
 
 func (metric *Metric) Add(metricType, value string) (newValue string, err error) {
 	fmt.Println("Metric Add")
-	if metric.metricType != metricType {
+	if metric.MetricType != metricType {
 		err = fmt.Errorf("metric type mismatch")
 		return
 	}
 
-	switch metric.metricType {
+	switch metric.MetricType {
 	case "gauge":
 		var floatValue float64
 		floatValue, err = strconv.ParseFloat(value, 64)
@@ -90,7 +91,7 @@ func (metric *Metric) Add(metricType, value string) (newValue string, err error)
 			err = fmt.Errorf("value less than zero")
 			return
 		}
-		metric.gauge = floatValue
+		metric.Gauge = floatValue
 		newValue = strconv.FormatFloat(floatValue, 'f', -1, 64)
 	case "counter":
 		var intValue int64
@@ -102,8 +103,8 @@ func (metric *Metric) Add(metricType, value string) (newValue string, err error)
 			err = fmt.Errorf("value less than zero")
 			return
 		}
-		metric.counter += intValue
-		newValue = strconv.FormatInt(metric.counter, 10)
+		metric.Counter += intValue
+		newValue = strconv.FormatInt(metric.Counter, 10)
 	default:
 		err = fmt.Errorf("metric type not supported")
 	}
@@ -112,24 +113,24 @@ func (metric *Metric) Add(metricType, value string) (newValue string, err error)
 
 func (metric *Metric) UpdateGauge(value *float64) (newValue *float64, err error) {
 
-	if metric.metricType != "gauge" {
+	if metric.MetricType != "gauge" {
 		err = fmt.Errorf("metric type mismatch")
 		return
 	}
 
-	metric.gauge = *value
+	metric.Gauge = *value
 	newValue = value
 	return
 }
 
 func (metric *Metric) UpdateCounter(value *int64) (newValue *int64, err error) {
 
-	if metric.metricType != "counter" {
+	if metric.MetricType != "counter" {
 		err = fmt.Errorf("metric type mismatch")
 		return
 	}
 
-	metric.counter += *value
-	newValue = &metric.counter
+	metric.Counter += *value
+	newValue = &metric.Counter
 	return
 }
