@@ -39,12 +39,13 @@ func WithLogging(logger *zap.SugaredLogger) func(next http.Handler) http.Handler
 			}
 			uri := req.RequestURI
 			method := req.Method
-
+			encoding := req.Header["Accept-Encoding"]
 			next.ServeHTTP(&lw, req)
 			duration := time.Since(start)
 			logger.Infoln(
 				"uri", uri,
 				"method", method,
+				"encoding", encoding,
 				"duration", duration,
 				"status", responseData.status,
 				"size", responseData.size,

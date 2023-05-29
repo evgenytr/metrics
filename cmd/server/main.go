@@ -8,6 +8,7 @@ import (
 	"github.com/evgenytr/metrics.git/internal/middleware"
 	"github.com/evgenytr/metrics.git/internal/storage/memstorage"
 	"github.com/go-chi/chi/v5"
+	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
 	"log"
 	"net/http"
@@ -42,7 +43,8 @@ func main() {
 	r := chi.NewRouter()
 
 	r.Use(withLogging)
-
+	r.Use(chiMiddleware.AllowContentEncoding("gzip"))
+	r.Use(chiMiddleware.Compress(5, "text/html", "application/json"))
 	r.Post("/update/", h.ProcessPostUpdateJSONRequest)
 	r.Post("/value/", h.ProcessPostValueJSONRequest)
 

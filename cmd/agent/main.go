@@ -69,7 +69,6 @@ func reportMetrics(ctx context.Context, reportInterval float64, currMetrics moni
 		err := currMetrics.ReportMetrics(host)
 
 		if err != nil {
-			fmt.Println("report metrics err")
 			cancelCtx(err)
 			return
 		}

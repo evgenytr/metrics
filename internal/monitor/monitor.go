@@ -256,10 +256,13 @@ func postJSONMetric(metrics *metric.Metrics, hostAddress string) (err error) {
 	client := resty.New()
 	_, err = client.R().
 		SetHeader("Content-Type", "application/json").
+		SetHeader("Accept-Encoding", "gzip").
 		SetBody(metrics).
 		Post(fmt.Sprintf("%v/update/", hostAddress))
 
-	//TODO properly handle connection refused error
+	//TODO properly handle connection refused error (don't quit goroutine)
+	//but quit on fatal error
+
 	if err != nil {
 		fmt.Println(err)
 	}
