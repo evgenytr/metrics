@@ -36,14 +36,16 @@ func (ms memStorage) LoadMetrics(fileStoragePath *string) (err error) {
 		return
 	}
 
-	var metricsMap map[string]*metric.Metric
-	metricsMap = make(map[string]*metric.Metric)
+	var metricsMap map[string]*metric.Metric = make(map[string]*metric.Metric)
 
 	if err = json.Unmarshal(data, &metricsMap); err != nil {
 		return
 	}
-	//TODO validate and load per metric
-	ms.metricsMap = metricsMap
+	//TODO validate
+	for key, value := range metricsMap {
+		ms.metricsMap[key] = value
+	}
+
 	return
 }
 
