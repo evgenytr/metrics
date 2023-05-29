@@ -55,6 +55,7 @@ func pollMetrics(ctx context.Context, pollInterval float64, currMetrics monitor.
 		err := currMetrics.PollMetrics()
 
 		if err != nil {
+			fmt.Println("poll metrics err")
 			cancelCtx(err)
 			return
 		}
@@ -68,6 +69,7 @@ func reportMetrics(ctx context.Context, reportInterval float64, currMetrics moni
 		err := currMetrics.ReportMetrics(host)
 
 		if err != nil {
+			fmt.Println("report metrics err")
 			cancelCtx(err)
 			return
 		}
