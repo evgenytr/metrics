@@ -168,7 +168,7 @@ func (h *BaseHandler) ProcessGetValueRequest(res http.ResponseWriter, req *http.
 
 func (h *BaseHandler) ProcessGetListRequest(res http.ResponseWriter, req *http.Request) {
 
-	res.Header().Set("Content-Type", "text/plain")
+	res.Header().Set("Content-Type", "text/html")
 
 	metricsMap, err := h.storage.ListAll()
 
