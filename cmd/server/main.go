@@ -28,7 +28,12 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	defer logger.Sync()
+	defer func() {
+		err = logger.Sync()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}()
 	sugar := logger.Sugar()
 
 	ctx := context.Background()

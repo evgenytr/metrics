@@ -163,7 +163,11 @@ func (h *StorageHandler) ProcessGetValueRequest(res http.ResponseWriter, req *ht
 		res.WriteHeader(http.StatusNotFound)
 		return
 	}
-	res.Write([]byte(value))
+	_, err = res.Write([]byte(value))
+	if err != nil {
+		fmt.Println(err)
+	}
+
 	res.WriteHeader(http.StatusOK)
 }
 
@@ -178,7 +182,10 @@ func (h *StorageHandler) ProcessGetListRequest(res http.ResponseWriter, req *htt
 		return
 	}
 	for key, value := range metricsMap {
-		res.Write([]byte(fmt.Sprintf("%v\t%v\r", key, value)))
+		_, err = res.Write([]byte(fmt.Sprintf("%v\t%v\r", key, value)))
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 
 	res.WriteHeader(http.StatusOK)
@@ -187,6 +194,9 @@ func (h *StorageHandler) ProcessGetListRequest(res http.ResponseWriter, req *htt
 func processBadRequest(res http.ResponseWriter, err error) {
 	res.Header().Set("Content-Type", "text/plain")
 	res.WriteHeader(http.StatusBadRequest)
-	res.Write([]byte(fmt.Sprintf("Bad request, error %v", err)))
+	_, errOut := res.Write([]byte(fmt.Sprintf("Bad request, error %v", err)))
+	if errOut != nil {
+		fmt.Println(err)
+	}
 	fmt.Println(err)
 }
