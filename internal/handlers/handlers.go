@@ -3,24 +3,25 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/evgenytr/metrics.git/internal/metric"
-	"github.com/evgenytr/metrics.git/internal/storage/memstorage"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/evgenytr/metrics.git/internal/metric"
+	"github.com/evgenytr/metrics.git/internal/storage/memstorage"
 )
 
-type BaseHandler struct {
+type StorageHandler struct {
 	storage memstorage.Storage
 }
 
-func NewBaseHandler(storage memstorage.Storage) *BaseHandler {
-	return &BaseHandler{
+func NewStorageHandler(storage memstorage.Storage) *StorageHandler {
+	return &StorageHandler{
 		storage: storage,
 	}
 }
 
-func (h *BaseHandler) ProcessPostUpdateJSONRequest(res http.ResponseWriter, req *http.Request) {
+func (h *StorageHandler) ProcessPostUpdateJSONRequest(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Set("Content-Type", "application/json")
 
@@ -34,9 +35,9 @@ func (h *BaseHandler) ProcessPostUpdateJSONRequest(res http.ResponseWriter, req 
 	}
 
 	switch currMetric.MType {
-	case "gauge":
+	case metric.GaugeMetricType:
 		currMetric.Value, err = h.storage.UpdateGauge(currMetric.ID, currMetric.Value)
-	case "counter":
+	case metric.CounterMetricType:
 		currMetric.Delta, err = h.storage.UpdateCounter(currMetric.ID, currMetric.Delta)
 	default:
 		err = fmt.Errorf("metric type unknown %v", currMetric.MType)
@@ -56,7 +57,7 @@ func (h *BaseHandler) ProcessPostUpdateJSONRequest(res http.ResponseWriter, req 
 	res.WriteHeader(http.StatusOK)
 }
 
-func (h *BaseHandler) ProcessPostValueJSONRequest(res http.ResponseWriter, req *http.Request) {
+func (h *StorageHandler) ProcessPostValueJSONRequest(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Set("Content-Type", "application/json")
 
@@ -72,9 +73,9 @@ func (h *BaseHandler) ProcessPostValueJSONRequest(res http.ResponseWriter, req *
 	fmt.Println(currMetric)
 
 	switch currMetric.MType {
-	case "gauge":
+	case metric.GaugeMetricType:
 		currMetric.Value, err = h.storage.GetGaugeValue(currMetric.ID)
-	case "counter":
+	case metric.CounterMetricType:
 		currMetric.Delta, err = h.storage.GetCounterValue(currMetric.ID)
 	default:
 		err = fmt.Errorf("metric type unknown %v", currMetric.MType)
@@ -96,7 +97,7 @@ func (h *BaseHandler) ProcessPostValueJSONRequest(res http.ResponseWriter, req *
 
 	res.WriteHeader(http.StatusOK)
 }
-func (h *BaseHandler) ProcessPostUpdateRequest(res http.ResponseWriter, req *http.Request) {
+func (h *StorageHandler) ProcessPostUpdateRequest(res http.ResponseWriter, req *http.Request) {
 
 	const requiredRequestPathChunks = 5
 
@@ -133,7 +134,7 @@ func (h *BaseHandler) ProcessPostUpdateRequest(res http.ResponseWriter, req *htt
 	res.WriteHeader(http.StatusOK)
 }
 
-func (h *BaseHandler) ProcessGetValueRequest(res http.ResponseWriter, req *http.Request) {
+func (h *StorageHandler) ProcessGetValueRequest(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Set("Content-Type", "text/plain")
 
@@ -166,7 +167,7 @@ func (h *BaseHandler) ProcessGetValueRequest(res http.ResponseWriter, req *http.
 	res.WriteHeader(http.StatusOK)
 }
 
-func (h *BaseHandler) ProcessGetListRequest(res http.ResponseWriter, req *http.Request) {
+func (h *StorageHandler) ProcessGetListRequest(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Set("Content-Type", "text/html")
 

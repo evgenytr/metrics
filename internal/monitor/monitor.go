@@ -2,10 +2,12 @@ package monitor
 
 import (
 	"fmt"
-	"github.com/evgenytr/metrics.git/internal/metric"
-	"github.com/go-resty/resty/v2"
 	"math/rand"
 	"runtime"
+
+	"github.com/go-resty/resty/v2"
+
+	"github.com/evgenytr/metrics.git/internal/metric"
 )
 
 type monitor struct {
@@ -219,34 +221,37 @@ func (m *monitor) ReportMetrics(hostAddress string) (err error) {
 }
 
 func reportFloat64Metric(metricType, name string, value float64, hostAddress string) (err error) {
-	currMetric := &metric.Metrics{ID: name, MType: metricType}
 	switch metricType {
-	case "gauge":
-		currMetric.Value = &value
-	case "counter":
-		var intValue = int64(value)
-		currMetric.Delta = &intValue
+	case metric.GaugeMetricType:
+		err = reportGaugeMetric(name, value, hostAddress)
+	case metric.CounterMetricType:
+		err = reportCounterMetric(name, int64(value), hostAddress)
 	default:
 		err = fmt.Errorf("metric type not supported")
-		return
 	}
-	err = postJSONMetric(currMetric, hostAddress)
 	return
 }
 
 func reportUint64Metric(metricType, name string, value uint64, hostAddress string) (err error) {
-	currMetric := &metric.Metrics{ID: name, MType: metricType}
 	switch metricType {
-	case "gauge":
-		var floatValue = float64(value)
-		currMetric.Value = &floatValue
-	case "counter":
-		var intValue = int64(value)
-		currMetric.Delta = &intValue
+	case metric.GaugeMetricType:
+		err = reportGaugeMetric(name, float64(value), hostAddress)
+	case metric.CounterMetricType:
+		err = reportCounterMetric(name, int64(value), hostAddress)
 	default:
 		err = fmt.Errorf("metric type not supported")
-		return
 	}
+	return
+}
+
+func reportGaugeMetric(name string, value float64, hostAddress string) (err error) {
+	currMetric := &metric.Metrics{ID: name, MType: metric.GaugeMetricType, Value: &value}
+	err = postJSONMetric(currMetric, hostAddress)
+	return
+}
+
+func reportCounterMetric(name string, value int64, hostAddress string) (err error) {
+	currMetric := &metric.Metrics{ID: name, MType: metric.CounterMetricType, Delta: &value}
 	err = postJSONMetric(currMetric, hostAddress)
 	return
 }
@@ -260,7 +265,7 @@ func postJSONMetric(metrics *metric.Metrics, hostAddress string) (err error) {
 		SetBody(metrics).
 		Post(fmt.Sprintf("%v/update/", hostAddress))
 
-	//TODO properly handle connection refused error (don't quit goroutine)
+	//TODO: properly handle connection refused error (don't quit goroutine)
 	//but quit on fatal error
 
 	if err != nil {

@@ -3,16 +3,16 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/evgenytr/metrics.git/internal/config"
-	"github.com/evgenytr/metrics.git/internal/handlers"
-	"github.com/evgenytr/metrics.git/internal/middleware"
-	"github.com/evgenytr/metrics.git/internal/storage/memstorage"
-	"github.com/go-chi/chi/v5"
-	chiMiddleware "github.com/go-chi/chi/v5/middleware"
-	"go.uber.org/zap"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/evgenytr/metrics.git/internal/config"
+	"github.com/evgenytr/metrics.git/internal/handlers"
+	"github.com/evgenytr/metrics.git/internal/logging"
+	"github.com/evgenytr/metrics.git/internal/router"
+	"github.com/evgenytr/metrics.git/internal/storage/memstorage"
+	"github.com/go-chi/chi/v5"
 )
 
 func main() {
@@ -22,17 +22,14 @@ func main() {
 	fmt.Println(*host, *storeInterval, *fileStoragePath, *restore)
 
 	storage := memstorage.NewStorage()
-	h := handlers.NewBaseHandler(storage)
+	storageHandler := handlers.NewStorageHandler(storage)
 
-	//TODO move logger to logging package (?)
-	logger, err := zap.NewDevelopment()
+	logger, err := logging.NewLogger(logging.NewDevelopment)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	defer logger.Sync()
 	sugar := logger.Sugar()
-
-	withLogging := middleware.WithLogging(sugar)
 
 	ctx := context.Background()
 	if *fileStoragePath != "" {
@@ -49,19 +46,8 @@ func main() {
 		}
 
 	}
-	r := chi.NewRouter()
 
-	r.Use(withLogging)
-	r.Use(chiMiddleware.AllowContentEncoding("gzip"))
-	r.Use(chiMiddleware.Compress(5, "text/html", "application/json"))
-	r.Post("/update/", h.ProcessPostUpdateJSONRequest)
-	r.Post("/value/", h.ProcessPostValueJSONRequest)
-
-	r.Post("/update/{type}/{name}/{value}", h.ProcessPostUpdateRequest)
-	r.Get("/value/{type}/{name}", h.ProcessGetValueRequest)
-
-	r.Get("/", h.ProcessGetListRequest)
-
+	r := router.Router(sugar, storageHandler)
 	go listenAndServe(ctx, host, r)
 
 	for {
@@ -71,7 +57,10 @@ func main() {
 			log.Fatalln(err)
 		}
 		if *fileStoragePath != "" {
-			storage.StoreMetrics(fileStoragePath)
+			err = storage.StoreMetrics(fileStoragePath)
+			if err != nil {
+				log.Print(err)
+			}
 		}
 	}
 }
@@ -85,10 +74,10 @@ func listenAndServe(ctx context.Context, host *string, r *chi.Mux) {
 	}
 }
 
-func storeMetrics(ctx context.Context, storeInterval *float64, fileStoragePath *string, storage memstorage.Storage) {
+func storeMetrics(ctx context.Context, storeInterval *time.Duration, fileStoragePath *string, storage memstorage.Storage) {
 	_, cancelCtx := context.WithCancelCause(ctx)
 	for {
-		time.Sleep(time.Duration(*storeInterval) * time.Second)
+		time.Sleep(*storeInterval)
 		err := storage.StoreMetrics(fileStoragePath)
 
 		if err != nil {

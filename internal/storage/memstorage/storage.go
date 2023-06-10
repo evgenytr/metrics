@@ -3,12 +3,13 @@ package memstorage
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/evgenytr/metrics.git/internal/metric"
 	"os"
+
+	"github.com/evgenytr/metrics.git/internal/metric"
 )
 
 type memStorage struct {
-	metricsMap map[string]*metric.Metric
+	metricsMap map[string]*metric.Metrics
 }
 
 type Storage interface {
@@ -25,7 +26,7 @@ type Storage interface {
 
 func NewStorage() Storage {
 	return &memStorage{
-		metricsMap: make(map[string]*metric.Metric),
+		metricsMap: make(map[string]*metric.Metrics),
 	}
 }
 
@@ -36,12 +37,12 @@ func (ms memStorage) LoadMetrics(fileStoragePath *string) (err error) {
 		return
 	}
 
-	var metricsMap = make(map[string]*metric.Metric)
+	var metricsMap = make(map[string]*metric.Metrics)
 
 	if err = json.Unmarshal(data, &metricsMap); err != nil {
 		return
 	}
-	//TODO validate
+	//TODO: validate
 	for key, value := range metricsMap {
 		ms.metricsMap[key] = value
 	}
@@ -55,7 +56,7 @@ func (ms memStorage) StoreMetrics(fileStoragePath *string) (err error) {
 	if err != nil {
 		return
 	}
-	os.WriteFile(*fileStoragePath, jsonRes, 0666)
+	err = os.WriteFile(*fileStoragePath, jsonRes, 0666)
 	return
 }
 

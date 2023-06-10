@@ -1,11 +1,13 @@
 package handlers
 
 import (
-	"github.com/evgenytr/metrics.git/internal/storage/memstorage"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/evgenytr/metrics.git/internal/storage/memstorage"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestProcessPostUpdateRequest(t *testing.T) {
@@ -102,7 +104,7 @@ func TestProcessPostUpdateRequest(t *testing.T) {
 		},
 	}
 	storage := memstorage.NewStorage()
-	h := NewBaseHandler(storage)
+	h := NewStorageHandler(storage)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -5,13 +5,8 @@ import (
 	"strconv"
 )
 
-// TODO having 2 structs is redundant, keep only one
-type Metric struct {
-	Name       string  `json:"id"`
-	MetricType string  `json:"type"`
-	Gauge      float64 `json:"gauge,omitempty"`
-	Counter    int64   `json:"counter,omitempty"`
-}
+const GaugeMetricType = "gauge"
+const CounterMetricType = "counter"
 
 type Metrics struct {
 	ID    string   `json:"id"`              // имя метрики
@@ -20,68 +15,68 @@ type Metrics struct {
 	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
 }
 
-func Create(metricType, name, value string) (newMetric *Metric, err error) {
+func Create(metricType, name, value string) (newMetric *Metrics, err error) {
 	fmt.Println("Metric Create")
-	newMetric = &Metric{
-		Name:       name,
-		MetricType: metricType,
+	newMetric = &Metrics{
+		ID:    name,
+		MType: metricType,
 	}
 	_, err = newMetric.Add(metricType, value)
 	return
 }
 
-func CreateGauge(name string, value *float64) (newMetric *Metric, err error) {
+func CreateGauge(name string, value *float64) (newMetric *Metrics, err error) {
 	fmt.Println("Gauge Metric Create")
-	newMetric = &Metric{
-		Name:       name,
-		MetricType: "gauge",
-		Gauge:      *value,
+	newMetric = &Metrics{
+		ID:    name,
+		MType: GaugeMetricType,
+		Value: value,
 	}
 	return
 }
 
-func CreateCounter(name string, value *int64) (newMetric *Metric, err error) {
+func CreateCounter(name string, value *int64) (newMetric *Metrics, err error) {
 	fmt.Println("Counter Metric Create")
-	newMetric = &Metric{
-		Name:       name,
-		MetricType: "counter",
-		Counter:    *value,
+	newMetric = &Metrics{
+		ID:    name,
+		MType: CounterMetricType,
+		Delta: value,
 	}
 	return
 }
 
-func (metric *Metric) GetValue() (value string) {
+func (metric *Metrics) GetValue() (value string) {
 
-	switch metric.MetricType {
-	case "gauge":
-		value = strconv.FormatFloat(metric.Gauge, 'f', -1, 64)
-	case "counter":
-		value = strconv.FormatInt(metric.Counter, 10)
+	switch metric.MType {
+	case GaugeMetricType:
+		value = strconv.FormatFloat(*metric.Value, 'f', -1, 64)
+	case CounterMetricType:
+		value = strconv.FormatInt(*metric.Delta, 10)
 	}
 	return
 }
 
-func (metric *Metric) GetGaugeValue() (value *float64) {
-	return &metric.Gauge
+func (metric *Metrics) GetGaugeValue() (value *float64) {
+	return metric.Value
 }
 
-func (metric *Metric) GetCounterValue() (value *int64) {
-	return &metric.Counter
+func (metric *Metrics) GetCounterValue() (value *int64) {
+	return metric.Delta
 }
 
-func (metric *Metric) GetType() (value string) {
-	return metric.MetricType
+func (metric *Metrics) GetType() (value string) {
+	return metric.MType
 }
 
-func (metric *Metric) Add(metricType, value string) (newValue string, err error) {
+func (metric *Metrics) Add(metricType, value string) (newValue string, err error) {
 	fmt.Println("Metric Add")
-	if metric.MetricType != metricType {
+	if metric.MType != metricType {
 		err = fmt.Errorf("metric type mismatch")
 		return
 	}
 
-	switch metric.MetricType {
-	case "gauge":
+	switch metric.MType {
+	case GaugeMetricType:
 		var floatValue float64
 		floatValue, err = strconv.ParseFloat(value, 64)
 		if err != nil {
@@ -91,9 +86,9 @@ func (metric *Metric) Add(metricType, value string) (newValue string, err error)
 			err = fmt.Errorf("value less than zero")
 			return
 		}
-		metric.Gauge = floatValue
+		metric.Value = &floatValue
 		newValue = strconv.FormatFloat(floatValue, 'f', -1, 64)
-	case "counter":
+	case CounterMetricType:
 		var intValue int64
 		intValue, err = strconv.ParseInt(value, 10, 64)
 		if err != nil {
@@ -103,34 +98,41 @@ func (metric *Metric) Add(metricType, value string) (newValue string, err error)
 			err = fmt.Errorf("value less than zero")
 			return
 		}
-		metric.Counter += intValue
-		newValue = strconv.FormatInt(metric.Counter, 10)
+		if metric.Delta != nil {
+			intValue += *metric.Delta
+		}
+		metric.Delta = &intValue
+		newValue = strconv.FormatInt(intValue, 10)
 	default:
 		err = fmt.Errorf("metric type not supported")
 	}
 	return
 }
 
-func (metric *Metric) UpdateGauge(value *float64) (newValue *float64, err error) {
+func (metric *Metrics) UpdateGauge(value *float64) (newValue *float64, err error) {
 
-	if metric.MetricType != "gauge" {
+	if metric.MType != GaugeMetricType {
 		err = fmt.Errorf("metric type mismatch")
 		return
 	}
 
-	metric.Gauge = *value
+	metric.Value = value
 	newValue = value
 	return
 }
 
-func (metric *Metric) UpdateCounter(value *int64) (newValue *int64, err error) {
+func (metric *Metrics) UpdateCounter(value *int64) (newValue *int64, err error) {
 
-	if metric.MetricType != "counter" {
+	if metric.MType != CounterMetricType {
 		err = fmt.Errorf("metric type mismatch")
 		return
 	}
 
-	metric.Counter += *value
-	newValue = &metric.Counter
+	deltaValue := *value
+	if metric.Delta != nil {
+		deltaValue += *metric.Delta
+	}
+	metric.Delta = &deltaValue
+	newValue = metric.Delta
 	return
 }

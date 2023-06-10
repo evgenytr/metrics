@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/evgenytr/metrics.git/internal/config"
-	"github.com/evgenytr/metrics.git/internal/monitor"
 	"log"
 	"time"
+
+	"github.com/evgenytr/metrics.git/internal/config"
+	"github.com/evgenytr/metrics.git/internal/monitor"
 )
 
 func main() {

@@ -2,8 +2,10 @@ package config
 
 import (
 	"flag"
-	"github.com/caarlos0/env/v6"
 	"os"
+	"time"
+
+	"github.com/caarlos0/env/v6"
 )
 
 type agentConfig struct {
@@ -38,10 +40,12 @@ func GetAgentConfig() (host *string, pollInterval, reportInterval *float64) {
 	}
 	return
 }
-func GetServerConfig() (host *string, storeInterval *float64, fileStoragePath *string, restore *bool) {
+func GetServerConfig() (host *string, storeIntervalOut *time.Duration, fileStoragePath *string, restore *bool) {
 
-	host, storeInterval, fileStoragePath, restore = getServerFlags()
+	var storeIntervalIn *float64
 	var cfg serverConfig
+
+	host, storeIntervalIn, fileStoragePath, restore = getServerFlags()
 
 	_ = env.Parse(&cfg)
 
@@ -54,7 +58,7 @@ func GetServerConfig() (host *string, storeInterval *float64, fileStoragePath *s
 	//STORE_INTERVAL can be set to 0, hence can't check it as !=0
 	value, ok := os.LookupEnv("STORE_INTERVAL")
 	if ok && value != "" {
-		storeInterval = &cfg.StoreInterval
+		storeIntervalIn = &cfg.StoreInterval
 	}
 
 	if cfg.FileStoragePath != "" {
@@ -66,6 +70,8 @@ func GetServerConfig() (host *string, storeInterval *float64, fileStoragePath *s
 		restore = &cfg.Restore
 	}
 
+	storeIntervalValue := time.Duration(*storeIntervalIn) * time.Second
+	storeIntervalOut = &storeIntervalValue
 	return
 }
 
