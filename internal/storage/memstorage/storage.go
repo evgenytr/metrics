@@ -8,13 +8,9 @@ import (
 	"github.com/evgenytr/metrics.git/internal/metric"
 )
 
-type memStorage struct {
-	metricsMap map[string]*metric.Metrics
-}
-
 type Storage interface {
-	LoadMetrics(fileStoragePath *string) error
-	StoreMetrics(fileStoragePath *string) error
+	LoadMetrics() error
+	StoreMetrics() error
 	UpdateGauge(name string, value *float64) (*float64, error)
 	UpdateCounter(name string, value *int64) (*int64, error)
 	GetGaugeValue(name string) (*float64, error)
@@ -22,17 +18,34 @@ type Storage interface {
 	Update(metricType, name, value string) (string, error)
 	ReadValue(metricType, name string) (string, error)
 	ListAll() (map[string]string, error)
+	Ping() error
 }
 
-func NewStorage() Storage {
+type memStorage struct {
+	metricsMap      map[string]*metric.Metrics
+	fileStoragePath *string
+}
+
+func NewStorage(fileStoragePath *string) Storage {
 	return &memStorage{
-		metricsMap: make(map[string]*metric.Metrics),
+		metricsMap:      make(map[string]*metric.Metrics),
+		fileStoragePath: fileStoragePath,
 	}
 }
 
-func (ms memStorage) LoadMetrics(fileStoragePath *string) (err error) {
+func (ms memStorage) Ping() (err error) {
+	fmt.Println("ping memstorage")
+	err = fmt.Errorf("no database used")
+	return
+}
+
+func (ms memStorage) LoadMetrics() (err error) {
 	fmt.Println("load metrics")
-	data, err := os.ReadFile(*fileStoragePath)
+	if ms.fileStoragePath == nil || *ms.fileStoragePath == "" {
+		err = fmt.Errorf("no file storage path")
+		return
+	}
+	data, err := os.ReadFile(*ms.fileStoragePath)
 	if err != nil {
 		return
 	}
@@ -50,13 +63,17 @@ func (ms memStorage) LoadMetrics(fileStoragePath *string) (err error) {
 	return
 }
 
-func (ms memStorage) StoreMetrics(fileStoragePath *string) (err error) {
+func (ms memStorage) StoreMetrics() (err error) {
 	fmt.Println("store metrics")
+	if ms.fileStoragePath == nil || *ms.fileStoragePath == "" {
+		err = fmt.Errorf("no file storage path")
+		return
+	}
 	jsonRes, err := json.Marshal(ms.metricsMap)
 	if err != nil {
 		return
 	}
-	err = os.WriteFile(*fileStoragePath, jsonRes, 0666)
+	err = os.WriteFile(*ms.fileStoragePath, jsonRes, 0666)
 	return
 }
 

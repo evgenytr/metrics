@@ -3,19 +3,18 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/evgenytr/metrics.git/internal/metric"
+	"github.com/evgenytr/metrics.git/internal/storage"
 	"net/http"
 	"net/url"
 	"strings"
-
-	"github.com/evgenytr/metrics.git/internal/metric"
-	"github.com/evgenytr/metrics.git/internal/storage/memstorage"
 )
 
 type StorageHandler struct {
-	storage memstorage.Storage
+	storage storage.Storage
 }
 
-func NewStorageHandler(storage memstorage.Storage) *StorageHandler {
+func NewStorageHandler(storage storage.Storage) *StorageHandler {
 	return &StorageHandler{
 		storage: storage,
 	}
@@ -186,6 +185,54 @@ func (h *StorageHandler) ProcessGetListRequest(res http.ResponseWriter, req *htt
 		if err != nil {
 			fmt.Println(err)
 		}
+	}
+
+	res.WriteHeader(http.StatusOK)
+}
+
+func (h *StorageHandler) ProcessPingRequest(res http.ResponseWriter, req *http.Request) {
+
+	res.Header().Set("Content-Type", "text/html")
+
+	if err := h.storage.Ping(); err != nil {
+		res.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	res.WriteHeader(http.StatusOK)
+}
+
+func (h *StorageHandler) ProcessPostUpdatesBatchRequest(res http.ResponseWriter, req *http.Request) {
+
+	res.Header().Set("Content-Type", "application/json")
+
+	dec := json.NewDecoder(req.Body)
+	var currMetric metric.Metrics
+
+	err := dec.Decode(&currMetric)
+	if err != nil {
+		processBadRequest(res, err)
+		return
+	}
+
+	switch currMetric.MType {
+	case metric.GaugeMetricType:
+		currMetric.Value, err = h.storage.UpdateGauge(currMetric.ID, currMetric.Value)
+	case metric.CounterMetricType:
+		currMetric.Delta, err = h.storage.UpdateCounter(currMetric.ID, currMetric.Delta)
+	default:
+		err = fmt.Errorf("metric type unknown %v", currMetric.MType)
+	}
+
+	if err != nil {
+		processBadRequest(res, err)
+		return
+	}
+
+	err = json.NewEncoder(res).Encode(currMetric)
+	if err != nil {
+		processBadRequest(res, err)
+		return
 	}
 
 	res.WriteHeader(http.StatusOK)

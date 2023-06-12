@@ -19,6 +19,11 @@ func Router(sugar *zap.SugaredLogger, h *handlers.StorageHandler) *chi.Mux {
 	r.Use(withLogging)
 	r.Use(chiMiddleware.AllowContentEncoding("gzip"))
 	r.Use(chiMiddleware.Compress(CompressionLevel, "text/html", "application/json"))
+
+	r.Get("/ping", h.ProcessPingRequest)
+
+	r.Post("/updates/", h.ProcessPostUpdatesBatchRequest)
+
 	r.Post("/update/", h.ProcessPostUpdateJSONRequest)
 	r.Post("/value/", h.ProcessPostValueJSONRequest)
 

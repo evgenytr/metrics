@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,18 +12,39 @@ import (
 	"github.com/evgenytr/metrics.git/internal/handlers"
 	"github.com/evgenytr/metrics.git/internal/logging"
 	"github.com/evgenytr/metrics.git/internal/router"
-	"github.com/evgenytr/metrics.git/internal/storage/memstorage"
+	"github.com/evgenytr/metrics.git/internal/storage"
+
 	"github.com/go-chi/chi/v5"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func main() {
 
-	host, storeInterval, fileStoragePath, restore := config.GetServerConfig()
+	host, storeInterval, fileStoragePath, restore, dbDSN := config.GetServerConfig()
 
-	fmt.Println(*host, *storeInterval, *fileStoragePath, *restore)
+	fmt.Println(*host, *storeInterval, *fileStoragePath, *restore, *dbDSN)
 
-	storage := memstorage.NewStorage()
-	storageHandler := handlers.NewStorageHandler(storage)
+	var err error
+	var db *sql.DB
+
+	if *dbDSN != "" {
+		db, err = sql.Open("pgx", *dbDSN)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		defer func() {
+			err = db.Close()
+			if err != nil {
+				fmt.Println(err)
+			}
+		}()
+
+	}
+
+	appStorage := storage.NewStorage(db, fileStoragePath)
+
+	storageHandler := handlers.NewStorageHandler(appStorage)
 
 	logger, err := logging.NewLogger(logging.NewDevelopment)
 	if err != nil {
@@ -37,19 +59,17 @@ func main() {
 	sugar := logger.Sugar()
 
 	ctx := context.Background()
-	if *fileStoragePath != "" {
-		if *restore {
-			err = storage.LoadMetrics(fileStoragePath)
-			//non fatal error
-			if err != nil {
-				log.Print(err)
-			}
-		}
 
-		if *storeInterval != 0 {
-			go storeMetrics(ctx, storeInterval, fileStoragePath, storage)
+	if *restore {
+		err = appStorage.LoadMetrics()
+		//non fatal error
+		if err != nil {
+			log.Print(err)
 		}
+	}
 
+	if *storeInterval != 0 {
+		go storeMetrics(ctx, storeInterval, appStorage)
 	}
 
 	r := router.Router(sugar, storageHandler)
@@ -61,12 +81,12 @@ func main() {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		if *fileStoragePath != "" {
-			err = storage.StoreMetrics(fileStoragePath)
-			if err != nil {
-				log.Print(err)
-			}
+
+		err = appStorage.StoreMetrics()
+		if err != nil {
+			log.Print(err)
 		}
+
 	}
 }
 
@@ -79,11 +99,11 @@ func listenAndServe(ctx context.Context, host *string, r *chi.Mux) {
 	}
 }
 
-func storeMetrics(ctx context.Context, storeInterval *time.Duration, fileStoragePath *string, storage memstorage.Storage) {
+func storeMetrics(ctx context.Context, storeInterval *time.Duration, storage storage.Storage) {
 	_, cancelCtx := context.WithCancelCause(ctx)
 	for {
 		time.Sleep(*storeInterval)
-		err := storage.StoreMetrics(fileStoragePath)
+		err := storage.StoreMetrics()
 
 		if err != nil {
 			fmt.Println("store metrics err")

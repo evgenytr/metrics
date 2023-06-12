@@ -19,6 +19,7 @@ type serverConfig struct {
 	StoreInterval   float64 `env:"STORE_INTERVAL"`
 	FileStoragePath string  `env:"FILE_STORAGE_PATH"`
 	Restore         bool    `env:"RESTORE"`
+	DatabaseDSN     string  `env:DATABASE_DSN`
 }
 
 func GetAgentConfig() (host *string, pollInterval, reportInterval *float64) {
@@ -40,12 +41,12 @@ func GetAgentConfig() (host *string, pollInterval, reportInterval *float64) {
 	}
 	return
 }
-func GetServerConfig() (host *string, storeIntervalOut *time.Duration, fileStoragePath *string, restore *bool) {
+func GetServerConfig() (host *string, storeIntervalOut *time.Duration, fileStoragePath *string, restore *bool, dbDSN *string) {
 
 	var storeIntervalIn *float64
 	var cfg serverConfig
 
-	host, storeIntervalIn, fileStoragePath, restore = getServerFlags()
+	host, storeIntervalIn, fileStoragePath, restore, dbDSN = getServerFlags()
 
 	_ = env.Parse(&cfg)
 
@@ -65,6 +66,10 @@ func GetServerConfig() (host *string, storeIntervalOut *time.Duration, fileStora
 		fileStoragePath = &cfg.FileStoragePath
 	}
 
+	if cfg.DatabaseDSN != "" {
+		dbDSN = &cfg.DatabaseDSN
+	}
+
 	value, ok = os.LookupEnv("RESTORE")
 	if ok && value != "" {
 		restore = &cfg.Restore
@@ -75,10 +80,12 @@ func GetServerConfig() (host *string, storeIntervalOut *time.Duration, fileStora
 	return
 }
 
-func getServerFlags() (host *string, storeInterval *float64, fileStoragePath *string, restore *bool) {
+// host=localhost user=postgres password=postgres sslmode=disable
+func getServerFlags() (host *string, storeInterval *float64, fileStoragePath *string, restore *bool, dbDSN *string) {
 	host = flag.String("a", "localhost:8080", "host address")
 	storeInterval = flag.Float64("i", 300, "file store interval")
 	fileStoragePath = flag.String("f", "/tmp/metrics-db.json", "file storage path")
+	dbDSN = flag.String("d", "", "database address")
 	restore = flag.Bool("r", true, "restore saved metrics on server start")
 	return
 }
