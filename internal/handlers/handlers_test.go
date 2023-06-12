@@ -103,7 +103,8 @@ func TestProcessPostUpdateRequest(t *testing.T) {
 			},
 		},
 	}
-	storage := memstorage.NewStorage()
+	fileStoragePath := "/tmp/metrics-db.json"
+	storage := memstorage.NewStorage(&fileStoragePath)
 	h := NewStorageHandler(storage)
 
 	for _, tt := range tests {
