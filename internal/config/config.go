@@ -19,7 +19,7 @@ type serverConfig struct {
 	StoreInterval   float64 `env:"STORE_INTERVAL"`
 	FileStoragePath string  `env:"FILE_STORAGE_PATH"`
 	Restore         bool    `env:"RESTORE"`
-	DatabaseDSN     string  `env:DATABASE_DSN`
+	DatabaseDSN     string  `env:"DATABASE_DSN"`
 }
 
 func GetAgentConfig() (host *string, pollInterval, reportInterval *float64) {
