@@ -4,12 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/evgenytr/metrics.git/internal/config"
 	"github.com/evgenytr/metrics.git/internal/handlers"
+	"github.com/evgenytr/metrics.git/internal/interfaces"
 	"github.com/evgenytr/metrics.git/internal/logging"
 	"github.com/evgenytr/metrics.git/internal/router"
 	"github.com/evgenytr/metrics.git/internal/storage"
@@ -20,12 +22,12 @@ import (
 
 func main() {
 
+	var err error
+	var db *sql.DB
+
 	host, storeInterval, fileStoragePath, restore, dbDSN := config.GetServerConfig()
 
 	fmt.Println(*host, *storeInterval, *fileStoragePath, *restore, *dbDSN)
-
-	var err error
-	var db *sql.DB
 
 	if *dbDSN != "" {
 		db, err = sql.Open("pgx", *dbDSN)
@@ -42,6 +44,7 @@ func main() {
 
 	}
 
+	useDatabase := db != nil
 	appStorage := storage.NewStorage(db, fileStoragePath)
 
 	storageHandler := handlers.NewStorageHandler(appStorage)
@@ -60,12 +63,13 @@ func main() {
 
 	ctx := context.Background()
 
-	if *restore {
-		err = appStorage.LoadMetrics()
-		//non fatal error
-		if err != nil {
-			log.Print(err)
+	err = appStorage.InitializeMetrics(ctx, restore)
+	if err != nil {
+		if useDatabase {
+			log.Fatalln(err)
 		}
+		//error is not critical unless it's database storage
+		fmt.Println(err)
 	}
 
 	if *storeInterval != 0 {
@@ -82,7 +86,7 @@ func main() {
 			log.Fatalln(err)
 		}
 
-		err = appStorage.StoreMetrics()
+		err = appStorage.StoreMetrics(ctx)
 		if err != nil {
 			log.Print(err)
 		}
@@ -99,14 +103,15 @@ func listenAndServe(ctx context.Context, host *string, r *chi.Mux) {
 	}
 }
 
-func storeMetrics(ctx context.Context, storeInterval *time.Duration, storage storage.Storage) {
+func storeMetrics(ctx context.Context, storeInterval *time.Duration, storage interfaces.Storage) {
 	_, cancelCtx := context.WithCancelCause(ctx)
 	for {
 		time.Sleep(*storeInterval)
-		err := storage.StoreMetrics()
+		err := storage.StoreMetrics(ctx)
 
 		if err != nil {
 			fmt.Println("store metrics err")
+			fmt.Println(err)
 			cancelCtx(err)
 			return
 		}

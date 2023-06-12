@@ -1,46 +1,39 @@
 package memstorage
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+
 	"os"
 
+	"github.com/evgenytr/metrics.git/internal/interfaces"
 	"github.com/evgenytr/metrics.git/internal/metric"
 )
-
-type Storage interface {
-	LoadMetrics() error
-	StoreMetrics() error
-	UpdateGauge(name string, value *float64) (*float64, error)
-	UpdateCounter(name string, value *int64) (*int64, error)
-	GetGaugeValue(name string) (*float64, error)
-	GetCounterValue(name string) (*int64, error)
-	Update(metricType, name, value string) (string, error)
-	ReadValue(metricType, name string) (string, error)
-	ListAll() (map[string]string, error)
-	Ping() error
-}
 
 type memStorage struct {
 	metricsMap      map[string]*metric.Metrics
 	fileStoragePath *string
 }
 
-func NewStorage(fileStoragePath *string) Storage {
+func NewStorage(fileStoragePath *string) interfaces.Storage {
 	return &memStorage{
 		metricsMap:      make(map[string]*metric.Metrics),
 		fileStoragePath: fileStoragePath,
 	}
 }
 
-func (ms memStorage) Ping() (err error) {
+func (ms memStorage) Ping(_ context.Context) (err error) {
 	fmt.Println("ping memstorage")
 	err = fmt.Errorf("no database used")
 	return
 }
 
-func (ms memStorage) LoadMetrics() (err error) {
-	fmt.Println("load metrics")
+func (ms memStorage) InitializeMetrics(_ context.Context, restore *bool) (err error) {
+	fmt.Println("init metrics")
+	if !*restore {
+		return
+	}
 	if ms.fileStoragePath == nil || *ms.fileStoragePath == "" {
 		err = fmt.Errorf("no file storage path")
 		return
@@ -55,7 +48,7 @@ func (ms memStorage) LoadMetrics() (err error) {
 	if err = json.Unmarshal(data, &metricsMap); err != nil {
 		return
 	}
-	//TODO: validate
+	//TODO: validate metrics loaded from file
 	for key, value := range metricsMap {
 		ms.metricsMap[key] = value
 	}
@@ -63,7 +56,7 @@ func (ms memStorage) LoadMetrics() (err error) {
 	return
 }
 
-func (ms memStorage) StoreMetrics() (err error) {
+func (ms memStorage) StoreMetrics(_ context.Context) (err error) {
 	fmt.Println("store metrics")
 	if ms.fileStoragePath == nil || *ms.fileStoragePath == "" {
 		err = fmt.Errorf("no file storage path")
@@ -77,7 +70,7 @@ func (ms memStorage) StoreMetrics() (err error) {
 	return
 }
 
-func (ms memStorage) Update(metricType, name, value string) (newValue string, err error) {
+func (ms memStorage) Update(_ context.Context, metricType, name, value string) (newValue string, err error) {
 	if currMetric, ok := ms.metricsMap[name]; ok {
 		newValue, err = currMetric.Add(metricType, value)
 		if err != nil {
@@ -90,7 +83,7 @@ func (ms memStorage) Update(metricType, name, value string) (newValue string, er
 	return
 }
 
-func (ms memStorage) UpdateGauge(name string, value *float64) (newValue *float64, err error) {
+func (ms memStorage) UpdateGauge(_ context.Context, name string, value *float64) (newValue *float64, err error) {
 	if currMetric, ok := ms.metricsMap[name]; ok {
 		newValue, err = currMetric.UpdateGauge(value)
 		if err != nil {
@@ -103,7 +96,7 @@ func (ms memStorage) UpdateGauge(name string, value *float64) (newValue *float64
 	return
 }
 
-func (ms memStorage) UpdateCounter(name string, value *int64) (newValue *int64, err error) {
+func (ms memStorage) UpdateCounter(_ context.Context, name string, value *int64) (newValue *int64, err error) {
 	if currMetric, ok := ms.metricsMap[name]; ok {
 		newValue, err = currMetric.UpdateCounter(value)
 		if err != nil {
@@ -116,7 +109,7 @@ func (ms memStorage) UpdateCounter(name string, value *int64) (newValue *int64, 
 	return
 }
 
-func (ms memStorage) ReadValue(metricType, name string) (value string, err error) {
+func (ms memStorage) ReadValue(_ context.Context, metricType, name string) (value string, err error) {
 	if currMetric, ok := ms.metricsMap[name]; ok {
 		if currMetric.GetType() != metricType {
 			err = fmt.Errorf("metric type mismatch")
@@ -129,7 +122,7 @@ func (ms memStorage) ReadValue(metricType, name string) (value string, err error
 	return
 }
 
-func (ms memStorage) GetGaugeValue(name string) (value *float64, err error) {
+func (ms memStorage) GetGaugeValue(_ context.Context, name string) (value *float64, err error) {
 	if currMetric, ok := ms.metricsMap[name]; ok {
 		if currMetric.GetType() != "gauge" {
 			err = fmt.Errorf("metric type mismatch")
@@ -142,7 +135,7 @@ func (ms memStorage) GetGaugeValue(name string) (value *float64, err error) {
 	return
 }
 
-func (ms memStorage) GetCounterValue(name string) (value *int64, err error) {
+func (ms memStorage) GetCounterValue(_ context.Context, name string) (value *int64, err error) {
 	if currMetric, ok := ms.metricsMap[name]; ok {
 		if currMetric.GetType() != "counter" {
 			err = fmt.Errorf("metric type mismatch")
@@ -155,10 +148,18 @@ func (ms memStorage) GetCounterValue(name string) (value *int64, err error) {
 	return
 }
 
-func (ms memStorage) ListAll() (metricsMap map[string]string, err error) {
-	metricsMap = make(map[string]string, len(ms.metricsMap))
+func (ms memStorage) ListAll(_ context.Context) (metricsMap *map[string]string, err error) {
+	newMetricsMap := make(map[string]string, len(ms.metricsMap))
 	for key, value := range ms.metricsMap {
-		metricsMap[key] = value.GetValue()
+		newMetricsMap[key] = value.GetValue()
 	}
-	return
+	return &newMetricsMap, err
+}
+
+func (ms memStorage) GetMetricsMap(_ context.Context) (metricsMap *map[string]*metric.Metrics, err error) {
+	newMetricsMap := make(map[string]*metric.Metrics, len(ms.metricsMap))
+	for key, value := range ms.metricsMap {
+		newMetricsMap[key] = value
+	}
+	return &newMetricsMap, err
 }

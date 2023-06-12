@@ -98,121 +98,121 @@ func (m *monitor) PollMetrics() (err error) {
 func (m *monitor) ReportMetrics(hostAddress string) (err error) {
 	fmt.Println("reportMetrics")
 
-	err = reportUint64Metric("gauge", "Alloc", m.Alloc, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "Alloc", m.Alloc, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("gauge", "BuckHashSys", m.BuckHashSys, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "BuckHashSys", m.BuckHashSys, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("gauge", "Frees", m.Frees, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "Frees", m.Frees, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("gauge", "GCSys", m.GCSys, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "GCSys", m.GCSys, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("gauge", "HeapAlloc", m.HeapAlloc, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "HeapAlloc", m.HeapAlloc, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("gauge", "HeapIdle", m.HeapIdle, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "HeapIdle", m.HeapIdle, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("gauge", "HeapInuse", m.HeapInuse, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "HeapInuse", m.HeapInuse, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("gauge", "HeapObjects", m.HeapObjects, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "HeapObjects", m.HeapObjects, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("gauge", "HeapReleased", m.HeapReleased, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "HeapReleased", m.HeapReleased, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("gauge", "HeapSys", m.HeapSys, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "HeapSys", m.HeapSys, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("gauge", "LastGC", m.LastGC, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "LastGC", m.LastGC, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("gauge", "Lookups", m.Lookups, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "Lookups", m.Lookups, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("gauge", "MCacheInuse", m.MCacheInuse, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "MCacheInuse", m.MCacheInuse, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("gauge", "MCacheSys", m.MCacheSys, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "MCacheSys", m.MCacheSys, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("gauge", "MSpanInuse", m.MSpanInuse, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "MSpanInuse", m.MSpanInuse, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("gauge", "MSpanSys", m.MSpanSys, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "MSpanSys", m.MSpanSys, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("gauge", "Mallocs", m.Mallocs, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "Mallocs", m.Mallocs, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("gauge", "NextGC", m.NextGC, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "NextGC", m.NextGC, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("gauge", "OtherSys", m.OtherSys, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "OtherSys", m.OtherSys, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("gauge", "PauseTotalNs", m.PauseTotalNs, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "PauseTotalNs", m.PauseTotalNs, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("gauge", "StackInuse", m.StackInuse, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "StackInuse", m.StackInuse, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("gauge", "StackSys", m.StackSys, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "StackSys", m.StackSys, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("gauge", "Sys", m.Sys, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "Sys", m.Sys, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("gauge", "TotalAlloc", m.TotalAlloc, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "TotalAlloc", m.TotalAlloc, hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportUint64Metric("counter", "PollCount", m.PollCount, hostAddress)
-	if err != nil {
-		return
-	}
-
-	err = reportUint64Metric("gauge", "NumForcedGC", uint64(m.NumForcedGC), hostAddress)
-	if err != nil {
-		return
-	}
-	err = reportUint64Metric("gauge", "NumGC", uint64(m.NumGC), hostAddress)
+	err = reportUint64Metric(metric.CounterMetricType, "PollCount", m.PollCount, hostAddress)
 	if err != nil {
 		return
 	}
 
-	err = reportFloat64Metric("gauge", "GCCPUFraction", m.GCCPUFraction, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "NumForcedGC", uint64(m.NumForcedGC), hostAddress)
 	if err != nil {
 		return
 	}
-	err = reportFloat64Metric("gauge", "RandomValue", m.RandomValue, hostAddress)
+	err = reportUint64Metric(metric.GaugeMetricType, "NumGC", uint64(m.NumGC), hostAddress)
+	if err != nil {
+		return
+	}
+
+	err = reportFloat64Metric(metric.GaugeMetricType, "GCCPUFraction", m.GCCPUFraction, hostAddress)
+	if err != nil {
+		return
+	}
+	err = reportFloat64Metric(metric.GaugeMetricType, "RandomValue", m.RandomValue, hostAddress)
 	if err != nil {
 		return
 	}
