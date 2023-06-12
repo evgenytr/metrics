@@ -40,7 +40,7 @@ func (dbs dbStorage) InitializeMetrics(ctx context.Context, restore *bool) (err 
 
 	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %v(id SERIAL PRIMARY KEY, "+
 		"metric_name VARCHAR(100), metric_type VARCHAR(7), metric_value DOUBLE PRECISION, metric_delta INT)", MetricsTableName)
-	_, err = dbs.db.QueryContext(ctxWithTimeout, query)
+	_, err = dbs.db.ExecContext(ctxWithTimeout, query)
 	if err != nil {
 		return
 	}
@@ -55,7 +55,10 @@ func (dbs dbStorage) InitializeMetrics(ctx context.Context, restore *bool) (err 
 	if err != nil {
 		return
 	}
-
+	err = rows.Err()
+	if err != nil {
+		return
+	}
 	defer func() {
 		err = rows.Close()
 		if err != nil {
@@ -108,7 +111,7 @@ func (dbs dbStorage) StoreMetrics(ctx context.Context) (err error) {
 
 	_, err = tx.ExecContext(ctx, fmt.Sprintf("TRUNCATE TABLE %v", MetricsTableName))
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return
 	}
 	for _, value := range *metricsMap {
@@ -125,13 +128,13 @@ func (dbs dbStorage) StoreMetrics(ctx context.Context) (err error) {
 			fmt.Println(query)
 			_, err = tx.ExecContext(ctx, query)
 			if err != nil {
-				tx.Rollback()
+				_ = tx.Rollback()
 				return
 			}
 		}
 	}
 
-	tx.Commit()
+	err = tx.Commit()
 
 	return
 }

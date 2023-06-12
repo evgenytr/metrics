@@ -2,7 +2,7 @@ package storage
 
 import (
 	"database/sql"
-	
+
 	"github.com/evgenytr/metrics.git/internal/interfaces"
 	"github.com/evgenytr/metrics.git/internal/storage/database"
 	"github.com/evgenytr/metrics.git/internal/storage/memstorage"
