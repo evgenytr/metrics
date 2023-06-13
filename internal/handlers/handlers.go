@@ -231,6 +231,11 @@ func (h *StorageHandler) ProcessPostUpdatesBatchJSONRequest(res http.ResponseWri
 	}
 
 	fmt.Println(buf.String())
+	if buf.Len() == 0 {
+		res.Write([]byte("Empty body"))
+		res.WriteHeader(http.StatusOK)
+		return
+	}
 
 	err = json.Unmarshal(buf.Bytes(), &currMetrics)
 
