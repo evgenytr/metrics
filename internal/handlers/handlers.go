@@ -22,6 +22,8 @@ func NewStorageHandler(storage interfaces.Storage) *StorageHandler {
 	}
 }
 
+//TODO: add tests for JSON handlers
+
 func (h *StorageHandler) ProcessPostUpdateJSONRequest(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Set("Content-Type", "application/json")
@@ -228,7 +230,14 @@ func (h *StorageHandler) ProcessPostUpdatesBatchJSONRequest(res http.ResponseWri
 		return
 	}
 
+	fmt.Println(string(buf.Bytes()))
+
 	err = json.Unmarshal(buf.Bytes(), &currMetrics)
+
+	if err != nil {
+		processBadRequest(res, err)
+		return
+	}
 
 	for _, currMetric := range currMetrics {
 		switch currMetric.MType {
