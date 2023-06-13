@@ -211,38 +211,34 @@ func (h *StorageHandler) ProcessPingRequest(res http.ResponseWriter, req *http.R
 	res.WriteHeader(http.StatusOK)
 }
 
-func (h *StorageHandler) ProcessPostUpdatesBatchRequest(res http.ResponseWriter, req *http.Request) {
+func (h *StorageHandler) ProcessPostUpdatesBatchJSONRequest(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Set("Content-Type", "application/json")
 
 	ctx := req.Context()
 	dec := json.NewDecoder(req.Body)
-	var currMetric metric.Metrics
+	var currMetrics []metric.Metrics
 
-	err := dec.Decode(&currMetric)
+	err := dec.Decode(&currMetrics)
 	if err != nil {
 		processBadRequest(res, err)
 		return
 	}
 
-	switch currMetric.MType {
-	case metric.GaugeMetricType:
-		currMetric.Value, err = h.storage.UpdateGauge(ctx, currMetric.ID, currMetric.Value)
-	case metric.CounterMetricType:
-		currMetric.Delta, err = h.storage.UpdateCounter(ctx, currMetric.ID, currMetric.Delta)
-	default:
-		err = fmt.Errorf("metric type unknown %v", currMetric.MType)
-	}
+	for _, currMetric := range currMetrics {
+		switch currMetric.MType {
+		case metric.GaugeMetricType:
+			currMetric.Value, err = h.storage.UpdateGauge(ctx, currMetric.ID, currMetric.Value)
+		case metric.CounterMetricType:
+			currMetric.Delta, err = h.storage.UpdateCounter(ctx, currMetric.ID, currMetric.Delta)
+		default:
+			err = fmt.Errorf("metric type unknown %v", currMetric.MType)
+		}
 
-	if err != nil {
-		processBadRequest(res, err)
-		return
-	}
-
-	err = json.NewEncoder(res).Encode(currMetric)
-	if err != nil {
-		processBadRequest(res, err)
-		return
+		if err != nil {
+			processBadRequest(res, err)
+			return
+		}
 	}
 
 	res.WriteHeader(http.StatusOK)

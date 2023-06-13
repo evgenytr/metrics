@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"os"
 
@@ -14,12 +15,14 @@ import (
 type memStorage struct {
 	metricsMap      map[string]*metric.Metrics
 	fileStoragePath *string
+	mutex           sync.Mutex
 }
 
 func NewStorage(fileStoragePath *string) interfaces.Storage {
 	return &memStorage{
 		metricsMap:      make(map[string]*metric.Metrics),
 		fileStoragePath: fileStoragePath,
+		mutex:           sync.Mutex{},
 	}
 }
 

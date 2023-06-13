@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/evgenytr/metrics.git/internal/interfaces"
@@ -14,14 +15,16 @@ import (
 const MetricsTableName = "metrics"
 
 type dbStorage struct {
-	db *sql.DB
-	ms interfaces.Storage
+	db    *sql.DB
+	ms    interfaces.Storage
+	mutex sync.Mutex
 }
 
 func NewStorage(db *sql.DB) interfaces.Storage {
 	return &dbStorage{
-		db: db,
-		ms: memstorage.NewStorage(nil),
+		db:    db,
+		ms:    memstorage.NewStorage(nil),
+		mutex: sync.Mutex{},
 	}
 }
 
@@ -100,6 +103,8 @@ func (dbs dbStorage) StoreMetrics(ctx context.Context) (err error) {
 		return
 	}
 
+	dbs.mutex.Lock()
+
 	tx, err := dbs.db.Begin()
 	if err != nil {
 		return
@@ -135,6 +140,8 @@ func (dbs dbStorage) StoreMetrics(ctx context.Context) (err error) {
 	}
 
 	err = tx.Commit()
+
+	dbs.mutex.Unlock()
 
 	return
 }

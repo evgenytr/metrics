@@ -136,3 +136,16 @@ func (metric *Metrics) UpdateCounter(value *int64) (newValue *int64, err error) 
 	newValue = metric.Delta
 	return
 }
+
+func (metric *Metrics) ResetCounter() (err error) {
+
+	if metric.MType != CounterMetricType {
+		err = fmt.Errorf("metric type mismatch")
+		return
+	}
+
+	var deltaValue int64 = 0
+
+	metric.Delta = &deltaValue
+	return
+}

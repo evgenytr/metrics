@@ -22,7 +22,7 @@ func Router(sugar *zap.SugaredLogger, h *handlers.StorageHandler) *chi.Mux {
 
 	r.Get("/ping", h.ProcessPingRequest)
 
-	r.Post("/updates/", h.ProcessPostUpdatesBatchRequest)
+	r.Post("/updates/", h.ProcessPostUpdatesBatchJSONRequest)
 
 	r.Post("/update/", h.ProcessPostUpdateJSONRequest)
 	r.Post("/value/", h.ProcessPostValueJSONRequest)

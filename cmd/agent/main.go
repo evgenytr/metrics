@@ -16,7 +16,10 @@ func main() {
 
 	fmt.Println(*host, *pollInterval, *reportInterval)
 
-	var currMetrics = monitor.NewMonitor()
+	currMetrics, err := monitor.NewMonitor()
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	hostAddress := fmt.Sprintf("http://%v", *host)
 
