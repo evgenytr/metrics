@@ -230,7 +230,7 @@ func (h *StorageHandler) ProcessPostUpdatesBatchJSONRequest(res http.ResponseWri
 		return
 	}
 
-	fmt.Println(string(buf.Bytes()))
+	fmt.Println(buf.String())
 
 	err = json.Unmarshal(buf.Bytes(), &currMetrics)
 
@@ -260,10 +260,12 @@ func (h *StorageHandler) ProcessPostUpdatesBatchJSONRequest(res http.ResponseWri
 
 func processBadRequest(res http.ResponseWriter, err error) {
 	res.Header().Set("Content-Type", "text/plain")
-	res.WriteHeader(http.StatusBadRequest)
+
 	_, errOut := res.Write([]byte(fmt.Sprintf("Bad request, error %v", err)))
 	if errOut != nil {
 		fmt.Println(err)
 	}
 	fmt.Println(err)
+
+	res.WriteHeader(http.StatusBadRequest)
 }
