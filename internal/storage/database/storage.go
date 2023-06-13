@@ -17,14 +17,14 @@ const MetricsTableName = "metrics"
 type dbStorage struct {
 	db    *sql.DB
 	ms    interfaces.Storage
-	mutex sync.Mutex
+	mutex *sync.Mutex
 }
 
 func NewStorage(db *sql.DB) interfaces.Storage {
 	return &dbStorage{
 		db:    db,
 		ms:    memstorage.NewStorage(nil),
-		mutex: sync.Mutex{},
+		mutex: &sync.Mutex{},
 	}
 }
 
