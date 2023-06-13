@@ -34,7 +34,8 @@ func (h *StorageHandler) ProcessPostUpdateJSONRequest(res http.ResponseWriter, r
 
 	err := dec.Decode(&currMetric)
 	if err != nil {
-		processBadRequest(res, err)
+		fmt.Println(err)
+		res.WriteHeader(http.StatusNotFound)
 		return
 	}
 
@@ -71,7 +72,8 @@ func (h *StorageHandler) ProcessPostValueJSONRequest(res http.ResponseWriter, re
 
 	err := dec.Decode(&currMetric)
 	if err != nil {
-		processBadRequest(res, err)
+		fmt.Println(err)
+		res.WriteHeader(http.StatusNotFound)
 		return
 	}
 
