@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -216,14 +217,18 @@ func (h *StorageHandler) ProcessPostUpdatesBatchJSONRequest(res http.ResponseWri
 	res.Header().Set("Content-Type", "application/json")
 
 	ctx := req.Context()
-	dec := json.NewDecoder(req.Body)
-	var currMetrics []metric.Metrics
 
-	err := dec.Decode(&currMetrics)
+	var currMetrics []metric.Metrics
+	var buf bytes.Buffer
+
+	_, err := buf.ReadFrom(req.Body)
+
 	if err != nil {
 		processBadRequest(res, err)
 		return
 	}
+
+	err = json.Unmarshal(buf.Bytes(), &currMetrics)
 
 	for _, currMetric := range currMetrics {
 		switch currMetric.MType {
