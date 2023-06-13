@@ -29,15 +29,23 @@ func (h *StorageHandler) ProcessPostUpdateJSONRequest(res http.ResponseWriter, r
 	res.Header().Set("Content-Type", "application/json")
 
 	ctx := req.Context()
-	dec := json.NewDecoder(req.Body)
 	var currMetric metric.Metrics
+	var buf bytes.Buffer
 
-	err := dec.Decode(&currMetric)
+	_, err := buf.ReadFrom(req.Body)
+
 	if err != nil {
-		fmt.Println(err)
-		res.WriteHeader(http.StatusNotFound)
+		processBadRequest(res, err)
 		return
 	}
+
+	fmt.Println(buf.String())
+	if buf.Len() == 0 {
+		res.WriteHeader(http.StatusOK)
+		return
+	}
+
+	err = json.Unmarshal(buf.Bytes(), &currMetric)
 
 	switch currMetric.MType {
 	case metric.GaugeMetricType:
@@ -67,15 +75,23 @@ func (h *StorageHandler) ProcessPostValueJSONRequest(res http.ResponseWriter, re
 	res.Header().Set("Content-Type", "application/json")
 
 	ctx := req.Context()
-	dec := json.NewDecoder(req.Body)
 	var currMetric metric.Metrics
+	var buf bytes.Buffer
 
-	err := dec.Decode(&currMetric)
+	_, err := buf.ReadFrom(req.Body)
+
 	if err != nil {
-		fmt.Println(err)
-		res.WriteHeader(http.StatusNotFound)
+		processBadRequest(res, err)
 		return
 	}
+
+	fmt.Println(buf.String())
+	if buf.Len() == 0 {
+		res.WriteHeader(http.StatusOK)
+		return
+	}
+
+	err = json.Unmarshal(buf.Bytes(), &currMetric)
 
 	fmt.Println(currMetric)
 
