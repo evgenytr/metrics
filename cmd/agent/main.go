@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/evgenytr/metrics.git/internal/config"
+	errorHandling "github.com/evgenytr/metrics.git/internal/errors"
 	"github.com/evgenytr/metrics.git/internal/monitor"
 )
 
@@ -24,8 +25,8 @@ func main() {
 	hostAddress := fmt.Sprintf("http://%v", *host)
 
 	ctx := context.Background()
-	go pollMetrics(ctx, *pollInterval, currMetrics)
-	go reportMetrics(ctx, *reportInterval, currMetrics, hostAddress)
+	go pollMetrics(ctx, pollInterval, currMetrics)
+	go reportMetrics(ctx, reportInterval, currMetrics, hostAddress)
 
 	for {
 		<-ctx.Done()
@@ -37,10 +38,10 @@ func main() {
 
 }
 
-func pollMetrics(ctx context.Context, pollInterval float64, currMetrics monitor.Monitor) {
+func pollMetrics(ctx context.Context, pollInterval *time.Duration, currMetrics monitor.Monitor) {
 	_, cancelCtx := context.WithCancelCause(ctx)
 	for {
-		time.Sleep(time.Duration(pollInterval) * time.Second)
+		time.Sleep(*pollInterval)
 		err := currMetrics.PollMetrics()
 
 		if err != nil {
@@ -51,11 +52,21 @@ func pollMetrics(ctx context.Context, pollInterval float64, currMetrics monitor.
 	}
 }
 
-func reportMetrics(ctx context.Context, reportInterval float64, currMetrics monitor.Monitor, host string) {
+func reportMetrics(ctx context.Context, reportInterval *time.Duration, currMetrics monitor.Monitor, host string) {
 	_, cancelCtx := context.WithCancelCause(ctx)
 	for {
-		time.Sleep(time.Duration(reportInterval) * time.Second)
+		time.Sleep(*reportInterval)
 		err := currMetrics.ReportMetrics(host)
+
+		if err != nil {
+			for _, retryInterval := range errorHandling.RepeatedAttemptsIntervals {
+				time.Sleep(*retryInterval)
+				err = currMetrics.ReportMetrics(host)
+				if err == nil {
+					break
+				}
+			}
+		}
 
 		if err != nil {
 			cancelCtx(err)

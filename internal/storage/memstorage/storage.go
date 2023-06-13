@@ -123,7 +123,7 @@ func (ms memStorage) ReadValue(_ context.Context, metricType, name string) (valu
 
 func (ms memStorage) GetGaugeValue(_ context.Context, name string) (value *float64, err error) {
 	if currMetric, ok := ms.metricsMap[name]; ok {
-		if currMetric.GetType() != "gauge" {
+		if currMetric.GetType() != metric.GaugeMetricType {
 			err = fmt.Errorf("metric type mismatch")
 			return
 		}
@@ -136,7 +136,7 @@ func (ms memStorage) GetGaugeValue(_ context.Context, name string) (value *float
 
 func (ms memStorage) GetCounterValue(_ context.Context, name string) (value *int64, err error) {
 	if currMetric, ok := ms.metricsMap[name]; ok {
-		if currMetric.GetType() != "counter" {
+		if currMetric.GetType() != metric.CounterMetricType {
 			err = fmt.Errorf("metric type mismatch")
 			return
 		}

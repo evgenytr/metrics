@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/evgenytr/metrics.git/internal/config"
+	errorHandling "github.com/evgenytr/metrics.git/internal/errors"
 	"github.com/evgenytr/metrics.git/internal/handlers"
 	"github.com/evgenytr/metrics.git/internal/interfaces"
 	"github.com/evgenytr/metrics.git/internal/logging"
@@ -31,6 +32,7 @@ func main() {
 
 	if *dbDSN != "" {
 		db, err = sql.Open("pgx", *dbDSN)
+
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -110,8 +112,17 @@ func storeMetrics(ctx context.Context, storeInterval *time.Duration, storage int
 		err := storage.StoreMetrics(ctx)
 
 		if err != nil {
-			fmt.Println("store metrics err")
-			fmt.Println(err)
+			for _, retryInterval := range errorHandling.RepeatedAttemptsIntervals {
+				time.Sleep(*retryInterval)
+				err = storage.StoreMetrics(ctx)
+				if err == nil {
+					break
+				}
+			}
+		}
+
+		if err != nil {
+			fmt.Println("store metrics err ", err)
 			cancelCtx(err)
 			return
 		}

@@ -30,7 +30,9 @@ func NewStorage(db *sql.DB) interfaces.Storage {
 
 func (dbs dbStorage) Ping(ctx context.Context) (err error) {
 	fmt.Println("ping dbstorage")
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, 1*time.Second)
+
+	const pingTimeout = 1
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, pingTimeout*time.Second)
 	defer cancel()
 
 	err = dbs.db.PingContext(ctxWithTimeout)
@@ -38,7 +40,9 @@ func (dbs dbStorage) Ping(ctx context.Context) (err error) {
 }
 
 func (dbs dbStorage) InitializeMetrics(ctx context.Context, restore *bool) (err error) {
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, 3*time.Second)
+
+	const databaseExecTimeout = 3
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, databaseExecTimeout*time.Second)
 	defer cancel()
 
 	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %v(id SERIAL PRIMARY KEY, "+

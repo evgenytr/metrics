@@ -39,12 +39,6 @@ func (h *StorageHandler) ProcessPostUpdateJSONRequest(res http.ResponseWriter, r
 		return
 	}
 
-	fmt.Println(buf.String())
-	if buf.Len() == 0 {
-		res.WriteHeader(http.StatusOK)
-		return
-	}
-
 	err = json.Unmarshal(buf.Bytes(), &currMetric)
 
 	if err != nil {
@@ -87,12 +81,6 @@ func (h *StorageHandler) ProcessPostValueJSONRequest(res http.ResponseWriter, re
 
 	if err != nil {
 		processBadRequest(res, err)
-		return
-	}
-
-	fmt.Println(buf.String())
-	if buf.Len() == 0 {
-		res.WriteHeader(http.StatusOK)
 		return
 	}
 
@@ -258,12 +246,6 @@ func (h *StorageHandler) ProcessPostUpdatesBatchJSONRequest(res http.ResponseWri
 		return
 	}
 
-	fmt.Println(buf.String())
-	if buf.Len() == 0 {
-		res.WriteHeader(http.StatusOK)
-		return
-	}
-
 	err = json.Unmarshal(buf.Bytes(), &currMetrics)
 
 	if err != nil {
@@ -287,16 +269,16 @@ func (h *StorageHandler) ProcessPostUpdatesBatchJSONRequest(res http.ResponseWri
 		}
 	}
 
+	//workaround for autotest fail on unmarshalling the response to main.Metrics
+	//sends null
 	var outMetrics []metric.Metrics
 	out, err := json.Marshal(outMetrics)
-	fmt.Println(outMetrics)
 
 	if err != nil {
 		processBadRequest(res, err)
 		return
 	}
 
-	fmt.Println(string(out))
 	_, err = res.Write(out)
 	if err != nil {
 		fmt.Println(err)

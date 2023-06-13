@@ -5,6 +5,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/evgenytr/metrics.git/internal/utils"
+
 	"github.com/caarlos0/env/v6"
 )
 
@@ -22,9 +24,12 @@ type serverConfig struct {
 	DatabaseDSN     string  `env:"DATABASE_DSN"`
 }
 
-func GetAgentConfig() (host *string, pollInterval, reportInterval *float64) {
-	host, pollInterval, reportInterval = getAgentFlags()
+func GetAgentConfig() (host *string, pollIntervalOut, reportIntervalOut *time.Duration) {
+
 	var cfg agentConfig
+	var pollIntervalIn, reportIntervalIn *float64
+
+	host, pollIntervalIn, reportIntervalIn = getAgentFlags()
 	_ = env.Parse(&cfg)
 	flag.Parse()
 
@@ -33,12 +38,16 @@ func GetAgentConfig() (host *string, pollInterval, reportInterval *float64) {
 	}
 
 	if cfg.PollInterval != 0 {
-		pollInterval = &cfg.PollInterval
+		pollIntervalIn = &cfg.PollInterval
 	}
 
 	if cfg.ReportInterval != 0 {
-		reportInterval = &cfg.ReportInterval
+		reportIntervalIn = &cfg.ReportInterval
 	}
+
+	pollIntervalOut = utils.GetTimeInterval(*pollIntervalIn)
+	reportIntervalOut = utils.GetTimeInterval(*reportIntervalIn)
+
 	return
 }
 func GetServerConfig() (host *string, storeIntervalOut *time.Duration, fileStoragePath *string, restore *bool, dbDSN *string) {
@@ -75,8 +84,8 @@ func GetServerConfig() (host *string, storeIntervalOut *time.Duration, fileStora
 		restore = &cfg.Restore
 	}
 
-	storeIntervalValue := time.Duration(*storeIntervalIn) * time.Second
-	storeIntervalOut = &storeIntervalValue
+	storeIntervalOut = utils.GetTimeInterval(*storeIntervalIn)
+
 	return
 }
 

@@ -274,5 +274,5 @@ func (m *monitor) ReportMetrics(hostAddress string) (err error) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	return nil
+	return err
 }
