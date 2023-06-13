@@ -264,12 +264,11 @@ func (h *StorageHandler) ProcessPostUpdatesBatchJSONRequest(res http.ResponseWri
 
 func processBadRequest(res http.ResponseWriter, err error) {
 	res.Header().Set("Content-Type", "text/plain")
+	res.WriteHeader(http.StatusBadRequest)
 
 	_, errOut := res.Write([]byte(fmt.Sprintf("Bad request, error %v", err)))
 	if errOut != nil {
 		fmt.Println(err)
 	}
 	fmt.Println(err)
-
-	res.WriteHeader(http.StatusBadRequest)
 }
