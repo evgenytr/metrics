@@ -287,11 +287,14 @@ func (h *StorageHandler) ProcessPostUpdatesBatchJSONRequest(res http.ResponseWri
 		}
 	}
 
-	err = json.NewEncoder(res).Encode(currMetrics)
+	out, err := json.Marshal(currMetrics)
 	if err != nil {
 		processBadRequest(res, err)
 		return
 	}
+
+	fmt.Println(string(out))
+	res.Write(out)
 
 	res.WriteHeader(http.StatusOK)
 }
