@@ -47,6 +47,11 @@ func (h *StorageHandler) ProcessPostUpdateJSONRequest(res http.ResponseWriter, r
 
 	err = json.Unmarshal(buf.Bytes(), &currMetric)
 
+	if err != nil {
+		processBadRequest(res, err)
+		return
+	}
+
 	switch currMetric.MType {
 	case metric.GaugeMetricType:
 		currMetric.Value, err = h.storage.UpdateGauge(ctx, currMetric.ID, currMetric.Value)
@@ -92,6 +97,11 @@ func (h *StorageHandler) ProcessPostValueJSONRequest(res http.ResponseWriter, re
 	}
 
 	err = json.Unmarshal(buf.Bytes(), &currMetric)
+
+	if err != nil {
+		processBadRequest(res, err)
+		return
+	}
 
 	fmt.Println(currMetric)
 
@@ -275,6 +285,12 @@ func (h *StorageHandler) ProcessPostUpdatesBatchJSONRequest(res http.ResponseWri
 			processBadRequest(res, err)
 			return
 		}
+	}
+
+	err = json.NewEncoder(res).Encode(currMetrics)
+	if err != nil {
+		processBadRequest(res, err)
+		return
 	}
 
 	res.WriteHeader(http.StatusOK)
