@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -45,12 +46,34 @@ func (dbs dbStorage) InitializeMetrics(ctx context.Context, restore *bool) (err 
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, databaseExecTimeout*time.Second)
 	defer cancel()
 
-	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %v(id SERIAL PRIMARY KEY, "+
-		"metric_name VARCHAR(100), metric_type VARCHAR(7), metric_value DOUBLE PRECISION, metric_delta INT)", MetricsTableName)
-	_, err = dbs.db.ExecContext(ctxWithTimeout, query)
+	tx, err := dbs.db.Begin()
 	if err != nil {
 		return
 	}
+
+	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %v(id SERIAL PRIMARY KEY, "+
+		"metric_name VARCHAR(100) UNIQUE, metric_type VARCHAR(7), metric_value DOUBLE PRECISION, metric_delta INT)", MetricsTableName)
+	_, err = tx.ExecContext(ctxWithTimeout, query)
+	if err != nil {
+		_ = tx.Rollback()
+		return
+	}
+
+	query = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS id_idx ON %v USING btree (id)", MetricsTableName)
+	_, err = tx.ExecContext(ctxWithTimeout, query)
+	if err != nil {
+		_ = tx.Rollback()
+		return
+	}
+
+	query = fmt.Sprintf("CREATE INDEX IF NOT EXISTS metric_name_idx ON %v USING hash (metric_name)", MetricsTableName)
+	_, err = tx.ExecContext(ctxWithTimeout, query)
+	if err != nil {
+		_ = tx.Rollback()
+		return
+	}
+
+	err = tx.Commit()
 
 	if !*restore {
 		return
@@ -107,6 +130,26 @@ func (dbs dbStorage) StoreMetrics(ctx context.Context) (err error) {
 		return
 	}
 
+	//nothing to store
+	if len(*metricsMap) == 0 {
+		return
+	}
+
+	insertValues := make([]string, len(*metricsMap))
+	valuesIndex := 0
+
+	for _, value := range *metricsMap {
+		switch value.MType {
+		case metric.GaugeMetricType:
+			currInsertValues := fmt.Sprintf("(DEFAULT, '%v', '%v', %v, %v)", value.ID, value.MType, *value.Value, "NULL")
+			insertValues[valuesIndex] = currInsertValues
+		case metric.CounterMetricType:
+			currInsertValues := fmt.Sprintf("(DEFAULT, '%v', '%v', %v, %v)", value.ID, value.MType, "NULL", *value.Delta)
+			insertValues[valuesIndex] = currInsertValues
+		}
+		valuesIndex++
+	}
+
 	dbs.mutex.Lock()
 
 	tx, err := dbs.db.Begin()
@@ -114,33 +157,14 @@ func (dbs dbStorage) StoreMetrics(ctx context.Context) (err error) {
 		return
 	}
 
-	//delete all records and insert anew
-	//brutal but more effective than checking for each metric if it exists and update
-	//or insert individually
-
-	_, err = tx.ExecContext(ctx, fmt.Sprintf("TRUNCATE TABLE %v", MetricsTableName))
+	query := fmt.Sprintf("INSERT INTO %v (id, metric_name, metric_type, metric_value, metric_delta) VALUES %v "+
+		"ON CONFLICT (metric_name) DO UPDATE SET metric_value = EXCLUDED.metric_value, metric_delta = EXCLUDED.metric_delta",
+		MetricsTableName, strings.Join(insertValues, ", "))
+	fmt.Println(query)
+	_, err = tx.ExecContext(ctx, query)
 	if err != nil {
 		_ = tx.Rollback()
 		return
-	}
-	for _, value := range *metricsMap {
-		var insertValues string
-		switch value.MType {
-		case metric.GaugeMetricType:
-			insertValues = fmt.Sprintf("DEFAULT, '%v', '%v', %v, %v", value.ID, value.MType, *value.Value, "NULL")
-		case metric.CounterMetricType:
-			insertValues = fmt.Sprintf("DEFAULT, '%v', '%v', %v, %v", value.ID, value.MType, "NULL", *value.Delta)
-		}
-
-		if insertValues != "" {
-			query := fmt.Sprintf("INSERT INTO %v (id, metric_name, metric_type, metric_value, metric_delta) VALUES (%v)", MetricsTableName, insertValues)
-			fmt.Println(query)
-			_, err = tx.ExecContext(ctx, query)
-			if err != nil {
-				_ = tx.Rollback()
-				return
-			}
-		}
 	}
 
 	err = tx.Commit()

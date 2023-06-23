@@ -37,6 +37,12 @@ func main() {
 			log.Fatalln(err)
 		}
 
+		//ping
+		err = db.Ping()
+		if err != nil {
+			log.Fatalln(err)
+		}
+
 		defer func() {
 			err = db.Close()
 			if err != nil {
