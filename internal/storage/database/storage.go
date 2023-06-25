@@ -5,14 +5,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 
 	"github.com/evgenytr/metrics.git/internal/interfaces"
@@ -65,7 +64,7 @@ func (dbs dbStorage) InitializeMetrics(ctx context.Context, restore *bool) (err 
 	driver, err := postgres.WithInstance(dbs.db, &postgres.Config{})
 	m, err := migrate.NewWithDatabaseInstance(fmt.Sprintf("file://%s", absPath), "postgres", driver)
 	if err != nil {
-		return fmt.Errorf("Failed to get a new migrate instance: %w", err)
+		return fmt.Errorf("failed to get a new migrate instance: %w", err)
 	}
 
 	version, dirty, err := m.Version()
@@ -74,7 +73,7 @@ func (dbs dbStorage) InitializeMetrics(ctx context.Context, restore *bool) (err 
 	if err := m.Up(); err != nil {
 		fmt.Println(err)
 		if !errors.Is(err, migrate.ErrNoChange) {
-			return fmt.Errorf("Failed to apply migrations to DB: %w", err)
+			return fmt.Errorf("failed to apply migrations to DB: %w", err)
 		}
 	}
 
@@ -86,7 +85,7 @@ func (dbs dbStorage) InitializeMetrics(ctx context.Context, restore *bool) (err 
 	query := fmt.Sprintf("SELECT metric_name, metric_type, metric_value, metric_delta FROM %v", MetricsTableName)
 	rows, err := dbs.db.QueryContext(ctxWithTimeout, query)
 	if err != nil {
-		return fmt.Errorf("Failed to load metrics from db: %w", err)
+		return fmt.Errorf("failed to load metrics from db: %w", err)
 	}
 	err = rows.Err()
 	if err != nil {
