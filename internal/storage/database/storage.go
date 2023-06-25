@@ -3,10 +3,17 @@ package database
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 
 	"github.com/evgenytr/metrics.git/internal/interfaces"
 	"github.com/evgenytr/metrics.git/internal/metric"
@@ -46,44 +53,40 @@ func (dbs dbStorage) InitializeMetrics(ctx context.Context, restore *bool) (err 
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, databaseExecTimeout*time.Second)
 	defer cancel()
 
-	tx, err := dbs.db.Begin()
+	//run migrations
+
+	const migrationsPath = "./internal/storage/database/migration"
+
+	absPath, err := filepath.Abs(migrationsPath)
+
+	fmt.Println(absPath)
+
+	//TODO: use project database instead of 'postgres', figure out how and when to create it, get name from config?
+	driver, err := postgres.WithInstance(dbs.db, &postgres.Config{})
+	m, err := migrate.NewWithDatabaseInstance(fmt.Sprintf("file://%s", absPath), "postgres", driver)
 	if err != nil {
-		return
+		return fmt.Errorf("Failed to get a new migrate instance: %w", err)
 	}
 
-	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %v(id SERIAL PRIMARY KEY, "+
-		"metric_name VARCHAR(100) UNIQUE, metric_type VARCHAR(7), metric_value DOUBLE PRECISION, metric_delta INT)", MetricsTableName)
-	_, err = tx.ExecContext(ctxWithTimeout, query)
-	if err != nil {
-		_ = tx.Rollback()
-		return
-	}
+	version, dirty, err := m.Version()
+	fmt.Println(version, dirty, err)
 
-	query = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS id_idx ON %v USING btree (id)", MetricsTableName)
-	_, err = tx.ExecContext(ctxWithTimeout, query)
-	if err != nil {
-		_ = tx.Rollback()
-		return
+	if err := m.Up(); err != nil {
+		fmt.Println(err)
+		if !errors.Is(err, migrate.ErrNoChange) {
+			return fmt.Errorf("Failed to apply migrations to DB: %w", err)
+		}
 	}
-
-	query = fmt.Sprintf("CREATE INDEX IF NOT EXISTS metric_name_idx ON %v USING hash (metric_name)", MetricsTableName)
-	_, err = tx.ExecContext(ctxWithTimeout, query)
-	if err != nil {
-		_ = tx.Rollback()
-		return
-	}
-
-	err = tx.Commit()
 
 	if !*restore {
 		return
 	}
 
 	//load metrics from db to memstorage
-	query = fmt.Sprintf("SELECT metric_name, metric_type, metric_value, metric_delta FROM %v", MetricsTableName)
+	query := fmt.Sprintf("SELECT metric_name, metric_type, metric_value, metric_delta FROM %v", MetricsTableName)
 	rows, err := dbs.db.QueryContext(ctxWithTimeout, query)
 	if err != nil {
-		return
+		return fmt.Errorf("Failed to load metrics from db: %w", err)
 	}
 	err = rows.Err()
 	if err != nil {
@@ -157,7 +160,7 @@ func (dbs dbStorage) StoreMetrics(ctx context.Context) (err error) {
 		return
 	}
 
-	query := fmt.Sprintf("INSERT INTO %v (id, metric_name, metric_type, metric_value, metric_delta) VALUES %v "+
+	query := fmt.Sprintf("INSERT INTO %s (id, metric_name, metric_type, metric_value, metric_delta) VALUES %v "+
 		"ON CONFLICT (metric_name) DO UPDATE SET metric_value = EXCLUDED.metric_value, metric_delta = EXCLUDED.metric_delta",
 		MetricsTableName, strings.Join(insertValues, ", "))
 	fmt.Println(query)
