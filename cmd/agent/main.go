@@ -13,9 +13,9 @@ import (
 
 func main() {
 
-	host, pollInterval, reportInterval := config.GetAgentConfig()
+	host, pollInterval, reportInterval, key, rateLimit := config.GetAgentConfig()
 
-	fmt.Println(*host, *pollInterval, *reportInterval)
+	fmt.Println(*host, *pollInterval, *reportInterval, *key, *rateLimit)
 
 	currMetrics, err := monitor.NewMonitor()
 	if err != nil {
@@ -26,7 +26,7 @@ func main() {
 
 	ctx := context.Background()
 	go pollMetrics(ctx, pollInterval, currMetrics)
-	go reportMetrics(ctx, reportInterval, currMetrics, hostAddress)
+	go reportMetrics(ctx, reportInterval, currMetrics, &hostAddress, key)
 
 	for {
 		<-ctx.Done()
@@ -52,16 +52,16 @@ func pollMetrics(ctx context.Context, pollInterval *time.Duration, currMetrics m
 	}
 }
 
-func reportMetrics(ctx context.Context, reportInterval *time.Duration, currMetrics monitor.Monitor, host string) {
+func reportMetrics(ctx context.Context, reportInterval *time.Duration, currMetrics monitor.Monitor, host, key *string) {
 	_, cancelCtx := context.WithCancelCause(ctx)
 	for {
 		time.Sleep(*reportInterval)
-		err := currMetrics.ReportMetrics(host)
+		err := currMetrics.ReportMetrics(host, key)
 
 		if err != nil {
 			for _, retryInterval := range errorHandling.RepeatedAttemptsIntervals {
 				time.Sleep(*retryInterval)
-				err = currMetrics.ReportMetrics(host)
+				err = currMetrics.ReportMetrics(host, key)
 				if err == nil {
 					break
 				}

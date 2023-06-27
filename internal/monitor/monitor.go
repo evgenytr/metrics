@@ -1,8 +1,13 @@
 package monitor
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
+	"io"
 	"math/rand"
+	"net/http"
 	"runtime"
 
 	"github.com/go-resty/resty/v2"
@@ -16,7 +21,7 @@ type monitor struct {
 
 type Monitor interface {
 	PollMetrics() error
-	ReportMetrics(host string) error
+	ReportMetrics(host, key *string) error
 	ResetPollCount()
 }
 
@@ -247,7 +252,7 @@ func (m *monitor) PollMetrics() (err error) {
 	return
 }
 
-func (m *monitor) ReportMetrics(hostAddress string) (err error) {
+func (m *monitor) ReportMetrics(hostAddress, key *string) (err error) {
 	fmt.Println("reportMetrics")
 
 	if len(m.metrics) == 0 {
@@ -262,11 +267,45 @@ func (m *monitor) ReportMetrics(hostAddress string) (err error) {
 	}
 
 	client := resty.New()
+
+	client.SetPreRequestHook(func(c *resty.Client, req *http.Request) (err error) {
+
+		fmt.Println("On before request")
+		if key != nil && *key != "" {
+			hash := sha256.New()
+
+			bodyBytes, errBody := io.ReadAll(req.Body)
+
+			if errBody != nil {
+				return fmt.Errorf("failed to read request body: %w", errBody)
+			}
+
+			req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+			keyBytes := []byte(*key)
+
+			src := append(bodyBytes, keyBytes...)
+			hash.Write(src)
+
+			dst := hash.Sum(nil)
+
+			encodedDst := base64.StdEncoding.EncodeToString(dst)
+
+			req.Header.Set("X-Signature", encodedDst)
+
+			fmt.Println("HashSHA256 set to ", encodedDst)
+		}
+
+		return
+	})
+
+	fmt.Println("Post")
+
 	_, err = client.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Accept-Encoding", "gzip").
 		SetBody(metricsBatch).
-		Post(fmt.Sprintf("%v/updates/", hostAddress))
+		Post(fmt.Sprintf("%v/updates/", *hostAddress))
 
 	//TODO: properly handle connection refused error (don't quit goroutine)
 	//but quit on fatal error

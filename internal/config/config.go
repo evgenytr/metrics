@@ -14,6 +14,8 @@ type agentConfig struct {
 	Host           string  `env:"ADDRESS"`
 	ReportInterval float64 `env:"REPORT_INTERVAL"`
 	PollInterval   float64 `env:"POLL_INTERVAL"`
+	Key            string  `env:"KEY"`
+	RateLimit      int64   `env:"RATE_LIMIT"`
 }
 
 type serverConfig struct {
@@ -22,14 +24,15 @@ type serverConfig struct {
 	FileStoragePath string  `env:"FILE_STORAGE_PATH"`
 	Restore         bool    `env:"RESTORE"`
 	DatabaseDSN     string  `env:"DATABASE_DSN"`
+	Key             string  `env:"KEY"`
 }
 
-func GetAgentConfig() (host *string, pollIntervalOut, reportIntervalOut *time.Duration) {
+func GetAgentConfig() (host *string, pollIntervalOut, reportIntervalOut *time.Duration, key *string, rateLimit *int64) {
 
 	var cfg agentConfig
 	var pollIntervalIn, reportIntervalIn *float64
 
-	host, pollIntervalIn, reportIntervalIn = getAgentFlags()
+	host, pollIntervalIn, reportIntervalIn, key, rateLimit = getAgentFlags()
 	_ = env.Parse(&cfg)
 	flag.Parse()
 
@@ -45,17 +48,25 @@ func GetAgentConfig() (host *string, pollIntervalOut, reportIntervalOut *time.Du
 		reportIntervalIn = &cfg.ReportInterval
 	}
 
+	if cfg.Key != "" {
+		key = &cfg.Key
+	}
+
+	if cfg.RateLimit != 0 {
+		rateLimit = &cfg.RateLimit
+	}
+
 	pollIntervalOut = utils.GetTimeInterval(*pollIntervalIn)
 	reportIntervalOut = utils.GetTimeInterval(*reportIntervalIn)
 
 	return
 }
-func GetServerConfig() (host *string, storeIntervalOut *time.Duration, fileStoragePath *string, restore *bool, dbDSN *string) {
+func GetServerConfig() (host *string, storeIntervalOut *time.Duration, fileStoragePath *string, restore *bool, dbDSN, key *string) {
 
 	var storeIntervalIn *float64
 	var cfg serverConfig
 
-	host, storeIntervalIn, fileStoragePath, restore, dbDSN = getServerFlags()
+	host, storeIntervalIn, fileStoragePath, restore, dbDSN, key = getServerFlags()
 
 	_ = env.Parse(&cfg)
 
@@ -79,6 +90,10 @@ func GetServerConfig() (host *string, storeIntervalOut *time.Duration, fileStora
 		dbDSN = &cfg.DatabaseDSN
 	}
 
+	if cfg.Key != "" {
+		key = &cfg.Key
+	}
+
 	value, ok = os.LookupEnv("RESTORE")
 	if ok && value != "" {
 		restore = &cfg.Restore
@@ -89,19 +104,22 @@ func GetServerConfig() (host *string, storeIntervalOut *time.Duration, fileStora
 	return
 }
 
-// host=localhost user=postgres password=postgres sslmode=disable
-func getServerFlags() (host *string, storeInterval *float64, fileStoragePath *string, restore *bool, dbDSN *string) {
+// host=localhost user=postgres password=postgres sslmode=disable dbname=evgenytrefilov
+func getServerFlags() (host *string, storeInterval *float64, fileStoragePath *string, restore *bool, dbDSN, key *string) {
 	host = flag.String("a", "localhost:8080", "host address")
 	storeInterval = flag.Float64("i", 300, "file store interval")
 	fileStoragePath = flag.String("f", "/tmp/metrics-db.json", "file storage path")
 	dbDSN = flag.String("d", "", "database address")
 	restore = flag.Bool("r", true, "restore saved metrics on server start")
+	key = flag.String("k", "adfsdfsdf", "hash key")
 	return
 }
 
-func getAgentFlags() (host *string, pollInterval, reportInterval *float64) {
+func getAgentFlags() (host *string, pollInterval, reportInterval *float64, key *string, rateLimit *int64) {
 	host = flag.String("a", "localhost:8080", "host address")
 	pollInterval = flag.Float64("p", 2, "metrics polling interval")
 	reportInterval = flag.Float64("r", 10, "metrics reporting interval")
+	key = flag.String("k", "adfsdfsdf", "hash key")
+	rateLimit = flag.Int64("l", 10, "metrics report rate limit")
 	return
 }

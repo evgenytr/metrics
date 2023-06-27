@@ -25,9 +25,9 @@ func main() {
 	var err error
 	var db *sql.DB
 
-	host, storeInterval, fileStoragePath, restore, dbDSN := config.GetServerConfig()
+	host, storeInterval, fileStoragePath, restore, dbDSN, key := config.GetServerConfig()
 
-	fmt.Println(*host, *storeInterval, *fileStoragePath, *restore, *dbDSN)
+	fmt.Println(*host, *storeInterval, *fileStoragePath, *restore, *dbDSN, *key)
 
 	if *dbDSN != "" {
 		db, err = sql.Open("pgx", *dbDSN)

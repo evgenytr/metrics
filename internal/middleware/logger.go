@@ -41,6 +41,8 @@ func WithLogging(logger *zap.SugaredLogger) func(next http.Handler) http.Handler
 			uri := req.RequestURI
 			method := req.Method
 			encoding := req.Header["Accept-Encoding"]
+			hash := req.Header["X-Signature"]
+
 			next.ServeHTTP(&lw, req)
 			duration := time.Since(start)
 			logger.Infoln(
@@ -50,6 +52,7 @@ func WithLogging(logger *zap.SugaredLogger) func(next http.Handler) http.Handler
 				"duration", duration,
 				"status", responseData.status,
 				"size", responseData.size,
+				"hash", hash,
 			)
 		}
 		return http.HandlerFunc(logFn)
