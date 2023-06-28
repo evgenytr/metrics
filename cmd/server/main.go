@@ -82,7 +82,7 @@ func main() {
 		go storeMetrics(ctx, storeInterval, appStorage)
 	}
 
-	r := router.Router(sugar, storageHandler)
+	r := router.Router(sugar, storageHandler, key)
 	go listenAndServe(ctx, host, r)
 
 	for {

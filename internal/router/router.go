@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
@@ -11,12 +12,18 @@ import (
 
 const CompressionLevel = 5
 
-func Router(sugar *zap.SugaredLogger, h *handlers.StorageHandler) *chi.Mux {
+func Router(sugar *zap.SugaredLogger, h *handlers.StorageHandler, key *string) *chi.Mux {
 	r := chi.NewRouter()
 
-	withLogging := middleware.WithLogging(sugar)
+	if key != nil && *key != "" {
+		fmt.Println("middleware with signature check used")
+		withSignatureCheck := middleware.WithSignatureCheck(key)
+		r.Use(withSignatureCheck)
+	}
 
+	withLogging := middleware.WithLogging(sugar)
 	r.Use(withLogging)
+
 	r.Use(chiMiddleware.AllowContentEncoding("gzip"))
 	r.Use(chiMiddleware.Compress(CompressionLevel, "text/html", "application/json"))
 

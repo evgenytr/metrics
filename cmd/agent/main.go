@@ -27,6 +27,7 @@ func main() {
 	ctx := context.Background()
 	go pollMetrics(ctx, pollInterval, currMetrics)
 	go reportMetrics(ctx, reportInterval, currMetrics, &hostAddress, key)
+	go pollAdditionalMetrics(ctx, pollInterval, currMetrics)
 
 	for {
 		<-ctx.Done()
@@ -46,6 +47,20 @@ func pollMetrics(ctx context.Context, pollInterval *time.Duration, currMetrics m
 
 		if err != nil {
 			fmt.Println("poll metrics err")
+			cancelCtx(err)
+			return
+		}
+	}
+}
+
+func pollAdditionalMetrics(ctx context.Context, pollInterval *time.Duration, currMetrics monitor.Monitor) {
+	_, cancelCtx := context.WithCancelCause(ctx)
+	for {
+		time.Sleep(*pollInterval)
+		err := currMetrics.PollAdditionalMetrics()
+
+		if err != nil {
+			fmt.Println("poll additional metrics err")
 			cancelCtx(err)
 			return
 		}

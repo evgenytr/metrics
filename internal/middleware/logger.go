@@ -41,7 +41,7 @@ func WithLogging(logger *zap.SugaredLogger) func(next http.Handler) http.Handler
 			uri := req.RequestURI
 			method := req.Method
 			encoding := req.Header["Accept-Encoding"]
-			hash := req.Header["X-Signature"]
+			hash := req.Header["Hashsha256"]
 
 			next.ServeHTTP(&lw, req)
 			duration := time.Since(start)
