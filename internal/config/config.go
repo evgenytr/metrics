@@ -111,7 +111,7 @@ func getServerFlags() (host *string, storeInterval *float64, fileStoragePath *st
 	fileStoragePath = flag.String("f", "/tmp/metrics-db.json", "file storage path")
 	dbDSN = flag.String("d", "", "database address")
 	restore = flag.Bool("r", true, "restore saved metrics on server start")
-	key = flag.String("k", "adfsdfsdf", "hash key")
+	key = flag.String("k", "", "hash key")
 	return
 }
 
@@ -119,7 +119,7 @@ func getAgentFlags() (host *string, pollInterval, reportInterval *float64, key *
 	host = flag.String("a", "localhost:8080", "host address")
 	pollInterval = flag.Float64("p", 2, "metrics polling interval")
 	reportInterval = flag.Float64("r", 10, "metrics reporting interval")
-	key = flag.String("k", "adfsdfsdf", "hash key")
+	key = flag.String("k", "", "hash key")
 	rateLimit = flag.Int64("l", 10, "metrics report rate limit")
 	return
 }
