@@ -3,12 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
-	"time"
-
 	"github.com/evgenytr/metrics.git/internal/config"
-	errorHandling "github.com/evgenytr/metrics.git/internal/errors"
 	"github.com/evgenytr/metrics.git/internal/monitor"
+	"log"
 )
 
 func main() {
@@ -16,18 +13,45 @@ func main() {
 	host, pollInterval, reportInterval, key, rateLimit := config.GetAgentConfig()
 
 	fmt.Println(*host, *pollInterval, *reportInterval, *key, *rateLimit)
+	hostAddress := fmt.Sprintf("http://%v", *host)
 
-	currMetrics, err := monitor.NewMonitor()
+	currMetrics, err := monitor.NewMonitor(&hostAddress, key)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	hostAddress := fmt.Sprintf("http://%v", *host)
-
 	ctx := context.Background()
-	go pollMetrics(ctx, pollInterval, currMetrics)
-	go reportMetrics(ctx, reportInterval, currMetrics, &hostAddress, key)
-	go pollAdditionalMetrics(ctx, pollInterval, currMetrics)
+
+	//create poll and report queues
+	pollQueue := monitor.NewQueue(nil)
+	extraPollQueue := monitor.NewQueue(nil)
+	reportQueue := monitor.NewQueue(rateLimit)
+
+	//create workers
+	var pollWorkerId int64 = 0
+	var extraPollWorkerId int64 = 1
+	var reportWorkerId int64 = 2
+
+	pollWorker := monitor.NewWorker(pollWorkerId, pollQueue)
+	go pollWorker.Loop(ctx, currMetrics.PollMetrics)
+
+	extraPollWorker := monitor.NewWorker(extraPollWorkerId, extraPollQueue)
+	go extraPollWorker.Loop(ctx, currMetrics.PollAdditionalMetrics)
+
+	if rateLimit == nil || *rateLimit <= 0 {
+		reportWorker := monitor.NewWorker(reportWorkerId, reportQueue)
+		go reportWorker.Loop(ctx, currMetrics.ReportMetrics)
+	} else {
+		for i := reportWorkerId; i < *rateLimit; i++ {
+			reportWorker := monitor.NewWorker(i, reportQueue)
+			go reportWorker.Loop(ctx, currMetrics.ReportMetrics)
+		}
+	}
+
+	//fill queues with tasks according to time intervals
+	go pollQueue.ScheduleTasks(pollInterval)
+	go extraPollQueue.ScheduleTasks(pollInterval)
+	go reportQueue.ScheduleTasks(reportInterval)
 
 	for {
 		<-ctx.Done()
@@ -37,57 +61,4 @@ func main() {
 		}
 	}
 
-}
-
-func pollMetrics(ctx context.Context, pollInterval *time.Duration, currMetrics monitor.Monitor) {
-	_, cancelCtx := context.WithCancelCause(ctx)
-	for {
-		time.Sleep(*pollInterval)
-		err := currMetrics.PollMetrics()
-
-		if err != nil {
-			fmt.Println("poll metrics err")
-			cancelCtx(err)
-			return
-		}
-	}
-}
-
-func pollAdditionalMetrics(ctx context.Context, pollInterval *time.Duration, currMetrics monitor.Monitor) {
-	_, cancelCtx := context.WithCancelCause(ctx)
-	for {
-		time.Sleep(*pollInterval)
-		err := currMetrics.PollAdditionalMetrics()
-
-		if err != nil {
-			fmt.Println("poll additional metrics err")
-			cancelCtx(err)
-			return
-		}
-	}
-}
-
-func reportMetrics(ctx context.Context, reportInterval *time.Duration, currMetrics monitor.Monitor, host, key *string) {
-	_, cancelCtx := context.WithCancelCause(ctx)
-	for {
-		time.Sleep(*reportInterval)
-		err := currMetrics.ReportMetrics(host, key)
-
-		if err != nil {
-			for _, retryInterval := range errorHandling.RepeatedAttemptsIntervals {
-				time.Sleep(*retryInterval)
-				err = currMetrics.ReportMetrics(host, key)
-				if err == nil {
-					break
-				}
-			}
-		}
-
-		if err != nil {
-			cancelCtx(err)
-			return
-		}
-
-		currMetrics.ResetPollCount()
-	}
 }

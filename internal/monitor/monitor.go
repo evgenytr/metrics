@@ -18,13 +18,15 @@ import (
 )
 
 type monitor struct {
-	metrics map[string]*metric.Metrics
+	metrics     map[string]*metric.Metrics
+	hostAddress *string
+	key         *string
 }
 
 type Monitor interface {
 	PollMetrics() error
 	PollAdditionalMetrics() error
-	ReportMetrics(host, key *string) error
+	ReportMetrics() error
 	ResetPollCount()
 }
 
@@ -83,13 +85,15 @@ func initMap() (initialMap map[string]*metric.Metrics, err error) {
 	return
 }
 
-func NewMonitor() (m Monitor, err error) {
+func NewMonitor(hostAddress, key *string) (m Monitor, err error) {
 	initialMap, err := initMap()
 	if err != nil {
 		return
 	}
 	m = &monitor{
-		metrics: initialMap,
+		metrics:     initialMap,
+		hostAddress: hostAddress,
+		key:         key,
 	}
 	return
 }
@@ -291,7 +295,7 @@ func (m *monitor) PollAdditionalMetrics() (err error) {
 	return
 }
 
-func (m *monitor) ReportMetrics(hostAddress, key *string) (err error) {
+func (m *monitor) ReportMetrics() (err error) {
 	fmt.Println("reportMetrics")
 
 	if len(m.metrics) == 0 {
@@ -310,7 +314,7 @@ func (m *monitor) ReportMetrics(hostAddress, key *string) (err error) {
 	client.SetPreRequestHook(func(c *resty.Client, req *http.Request) (err error) {
 
 		fmt.Println("On before request")
-		if key != nil && *key != "" {
+		if m.key != nil && *m.key != "" {
 			hash := sha256.New()
 
 			bodyBytes, errBody := io.ReadAll(req.Body)
@@ -321,7 +325,7 @@ func (m *monitor) ReportMetrics(hostAddress, key *string) (err error) {
 
 			req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
-			keyBytes := []byte(*key)
+			keyBytes := []byte(*m.key)
 
 			src := append(bodyBytes, keyBytes...)
 			hash.Write(src)
@@ -342,7 +346,7 @@ func (m *monitor) ReportMetrics(hostAddress, key *string) (err error) {
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Accept-Encoding", "gzip").
 		SetBody(metricsBatch).
-		Post(fmt.Sprintf("%v/updates/", *hostAddress))
+		Post(fmt.Sprintf("%v/updates/", *m.hostAddress))
 
 	//TODO: properly handle connection refused error (don't quit goroutine)
 	//but quit on fatal error
