@@ -28,22 +28,22 @@ func main() {
 	reportQueue := monitor.NewQueue(rateLimit)
 
 	//create workers
-	var pollWorkerId int64 = 0
-	var extraPollWorkerId int64 = 1
-	var reportWorkerId int64 = 2
+	var pollWorkerID int64 = 0
+	var extraPollWorkerID int64 = 1
+	var reportWorkerID int64 = 2
 
-	pollWorker := monitor.NewWorker(pollWorkerId, pollQueue)
+	pollWorker := monitor.NewWorker(pollWorkerID, pollQueue)
 	go pollWorker.Loop(ctx, currMetrics.PollMetrics)
 
-	extraPollWorker := monitor.NewWorker(extraPollWorkerId, extraPollQueue)
+	extraPollWorker := monitor.NewWorker(extraPollWorkerID, extraPollQueue)
 	go extraPollWorker.Loop(ctx, currMetrics.PollAdditionalMetrics)
 
 	if rateLimit == nil || *rateLimit <= 0 {
-		reportWorker := monitor.NewWorker(reportWorkerId, reportQueue)
+		reportWorker := monitor.NewWorker(reportWorkerID, reportQueue)
 		go reportWorker.Loop(ctx, currMetrics.ReportMetrics)
 	} else {
-		for i := reportWorkerId; i < *rateLimit; i++ {
-			reportWorker := monitor.NewWorker(i, reportQueue)
+		for i := int64(0); i < *rateLimit; i++ {
+			reportWorker := monitor.NewWorker(i+reportWorkerID, reportQueue)
 			go reportWorker.Loop(ctx, currMetrics.ReportMetrics)
 		}
 	}
