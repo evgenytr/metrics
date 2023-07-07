@@ -35,11 +35,11 @@ func (q *Queue) Pop() *Task {
 }
 
 func (q *Queue) ScheduleTasks(interval *time.Duration) {
-	taskId := 0
+	taskID := 0
 	for {
 		time.Sleep(*interval)
-		q.Push(&Task{id: taskId})
-		taskId++
+		q.Push(&Task{id: taskID})
+		taskID++
 	}
 }
 
