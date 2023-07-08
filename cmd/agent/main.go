@@ -21,7 +21,7 @@ func main() {
 	}
 
 	ctx := context.Background()
-
+	workerCtx, cancelWorkerCtx := context.WithCancelCause(ctx)
 	//create poll and report queues
 	pollQueue := monitor.NewQueue(nil)
 	extraPollQueue := monitor.NewQueue(nil)
@@ -33,18 +33,18 @@ func main() {
 	var reportWorkerID int64 = 2
 
 	pollWorker := monitor.NewWorker(pollWorkerID, pollQueue)
-	go pollWorker.Loop(ctx, currMetrics.PollMetrics)
+	go pollWorker.Loop(workerCtx, cancelWorkerCtx, currMetrics.PollMetrics)
 
 	extraPollWorker := monitor.NewWorker(extraPollWorkerID, extraPollQueue)
-	go extraPollWorker.Loop(ctx, currMetrics.PollAdditionalMetrics)
+	go extraPollWorker.Loop(workerCtx, cancelWorkerCtx, currMetrics.PollAdditionalMetrics)
 
 	if rateLimit == nil || *rateLimit <= 0 {
 		reportWorker := monitor.NewWorker(reportWorkerID, reportQueue)
-		go reportWorker.Loop(ctx, currMetrics.ReportMetrics)
+		go reportWorker.Loop(workerCtx, cancelWorkerCtx, currMetrics.ReportMetrics)
 	} else {
 		for i := int64(0); i < *rateLimit; i++ {
 			reportWorker := monitor.NewWorker(i+reportWorkerID, reportQueue)
-			go reportWorker.Loop(ctx, currMetrics.ReportMetrics)
+			go reportWorker.Loop(workerCtx, cancelWorkerCtx, currMetrics.ReportMetrics)
 		}
 	}
 
@@ -52,7 +52,7 @@ func main() {
 	go pollQueue.ScheduleTasks(pollInterval)
 	go extraPollQueue.ScheduleTasks(pollInterval)
 	go reportQueue.ScheduleTasks(reportInterval)
-
+	
 	for {
 		<-ctx.Done()
 		err := context.Cause(ctx)

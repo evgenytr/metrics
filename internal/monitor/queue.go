@@ -54,6 +54,7 @@ type Worker struct {
 }
 
 func NewWorker(id int64, queue *Queue) *Worker {
+	fmt.Println("worker %w created", id)
 	return &Worker{
 		id:    id,
 		queue: queue,
@@ -62,15 +63,21 @@ func NewWorker(id int64, queue *Queue) *Worker {
 
 type workerFunc func() error
 
-func (w *Worker) Loop(ctx context.Context, fn workerFunc) {
-	_, cancelCtx := context.WithCancelCause(ctx)
+func (w *Worker) Loop(ctx context.Context, cancelCtx context.CancelCauseFunc, fn workerFunc) {
 	for {
+		select {
+		case <-ctx.Done():
+			fmt.Println("worker %w cancelled", w.id)
+			return
+		default:
+		}
 		_ = w.queue.pop()
 
 		err := fn()
 
 		if err != nil {
 			fmt.Println("worker %w err %w", w.id, err)
+			err = fmt.Errorf("worker %d failed: %w", w.id, err)
 			cancelCtx(err)
 			return
 		}
