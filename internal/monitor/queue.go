@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	errorHandling "github.com/evgenytr/metrics.git/internal/errors"
 )
 
 type Task struct {
@@ -74,6 +76,17 @@ func (w *Worker) Loop(ctx context.Context, cancelCtx context.CancelCauseFunc, fn
 		_ = w.queue.pop()
 
 		err := fn()
+
+		if err != nil {
+			for _, retryInterval := range errorHandling.RepeatedAttemptsIntervals {
+				fmt.Printf("worker %d retrying in %s\n", w.id, *retryInterval)
+				time.Sleep(*retryInterval)
+				err = fn()
+				if err == nil {
+					break
+				}
+			}
+		}
 
 		if err != nil {
 			fmt.Println("worker %w err %w", w.id, err)

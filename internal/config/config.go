@@ -120,6 +120,6 @@ func getAgentFlags() (host *string, pollInterval, reportInterval *float64, key *
 	pollInterval = flag.Float64("p", 2, "metrics polling interval")
 	reportInterval = flag.Float64("r", 10, "metrics reporting interval")
 	key = flag.String("k", "", "hash key")
-	rateLimit = flag.Int64("l", 10, "metrics report rate limit")
+	rateLimit = flag.Int64("l", 2, "metrics report rate limit")
 	return
 }
