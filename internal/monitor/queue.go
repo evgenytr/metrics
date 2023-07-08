@@ -54,7 +54,7 @@ type Worker struct {
 }
 
 func NewWorker(id int64, queue *Queue) *Worker {
-	fmt.Println("worker %w created", id)
+	fmt.Println("worker created", id)
 	return &Worker{
 		id:    id,
 		queue: queue,
