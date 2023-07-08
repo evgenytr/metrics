@@ -52,10 +52,10 @@ func main() {
 	go pollQueue.ScheduleTasks(pollInterval)
 	go extraPollQueue.ScheduleTasks(pollInterval)
 	go reportQueue.ScheduleTasks(reportInterval)
-	
+
 	for {
-		<-ctx.Done()
-		err := context.Cause(ctx)
+		<-workerCtx.Done()
+		err := context.Cause(workerCtx)
 		if err != nil {
 			log.Fatalln(err)
 		}
