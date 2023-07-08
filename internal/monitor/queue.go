@@ -26,19 +26,24 @@ func NewQueue(bufSize *int64) *Queue {
 	}
 }
 
-func (q *Queue) Push(t *Task) {
+func (q *Queue) push(t *Task) {
 	q.ch <- t
 }
 
-func (q *Queue) Pop() *Task {
+func (q *Queue) pop() *Task {
 	return <-q.ch
+}
+
+func (q *Queue) close() {
+	close(q.ch)
 }
 
 func (q *Queue) ScheduleTasks(interval *time.Duration) {
 	taskID := 0
+	defer q.close()
 	for {
 		time.Sleep(*interval)
-		q.Push(&Task{id: taskID})
+		q.push(&Task{id: taskID})
 		taskID++
 	}
 }
@@ -60,7 +65,7 @@ type workerFunc func() error
 func (w *Worker) Loop(ctx context.Context, fn workerFunc) {
 	_, cancelCtx := context.WithCancelCause(ctx)
 	for {
-		_ = w.queue.Pop()
+		_ = w.queue.pop()
 
 		err := fn()
 
