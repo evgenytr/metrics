@@ -15,10 +15,10 @@ import (
 const CompressionLevel = 5
 
 // Router method creates new Router.
-func Router(sugar *zap.SugaredLogger, h *handlers.StorageHandler, key *string) *chi.Mux {
+func Router(sugar *zap.SugaredLogger, h *handlers.StorageHandler, key string) *chi.Mux {
 	r := chi.NewRouter()
 
-	if key != nil && *key != "" {
+	if key != "" {
 		fmt.Println("middleware with signature check used")
 		withSignatureCheck := middleware.WithSignatureCheck(key)
 		r.Use(withSignatureCheck)

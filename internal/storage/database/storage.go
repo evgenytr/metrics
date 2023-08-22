@@ -30,7 +30,7 @@ type dbStorage struct {
 func NewStorage(db *sql.DB) interfaces.Storage {
 	return &dbStorage{
 		db:    db,
-		ms:    memstorage.NewStorage(nil),
+		ms:    memstorage.NewStorage(""),
 		mutex: &sync.Mutex{},
 	}
 }
@@ -46,7 +46,7 @@ func (dbs dbStorage) Ping(ctx context.Context) (err error) {
 	return
 }
 
-func (dbs dbStorage) InitializeMetrics(ctx context.Context, restore *bool) (err error) {
+func (dbs dbStorage) InitializeMetrics(ctx context.Context, restore bool) (err error) {
 
 	const databaseExecTimeout = 3
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, databaseExecTimeout*time.Second)
@@ -77,7 +77,7 @@ func (dbs dbStorage) InitializeMetrics(ctx context.Context, restore *bool) (err 
 		}
 	}
 
-	if !*restore {
+	if !restore {
 		return
 	}
 

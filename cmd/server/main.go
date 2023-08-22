@@ -27,10 +27,10 @@ func main() {
 
 	host, storeInterval, fileStoragePath, restore, dbDSN, key := config.GetServerConfig()
 
-	fmt.Println(*host, *storeInterval, *fileStoragePath, *restore, *dbDSN, *key)
+	fmt.Println(host, storeInterval, fileStoragePath, restore, dbDSN, key)
 
-	if *dbDSN != "" {
-		db, err = sql.Open("pgx", *dbDSN)
+	if dbDSN != "" {
+		db, err = sql.Open("pgx", dbDSN)
 
 		if err != nil {
 			log.Fatalln(err)
@@ -78,7 +78,7 @@ func main() {
 		fmt.Println(err)
 	}
 
-	if *storeInterval != 0 {
+	if storeInterval != 0 {
 		go storeMetrics(ctx, storeInterval, appStorage)
 	}
 
@@ -100,24 +100,24 @@ func main() {
 	}
 }
 
-func listenAndServe(ctx context.Context, host *string, r *chi.Mux) {
+func listenAndServe(ctx context.Context, host string, r *chi.Mux) {
 	_, cancelCtx := context.WithCancelCause(ctx)
-	err := http.ListenAndServe(*host, r)
+	err := http.ListenAndServe(host, r)
 	if err != nil {
 		fmt.Println("listenAndServe err", err)
 		cancelCtx(err)
 	}
 }
 
-func storeMetrics(ctx context.Context, storeInterval *time.Duration, storage interfaces.Storage) {
+func storeMetrics(ctx context.Context, storeInterval time.Duration, storage interfaces.Storage) {
 	_, cancelCtx := context.WithCancelCause(ctx)
 	for {
-		time.Sleep(*storeInterval)
+		time.Sleep(storeInterval)
 		err := storage.StoreMetrics(ctx)
 
 		if err != nil {
 			for _, retryInterval := range errorHandling.RepeatedAttemptsIntervals {
-				time.Sleep(*retryInterval)
+				time.Sleep(retryInterval)
 				err = storage.StoreMetrics(ctx)
 				if err == nil {
 					break

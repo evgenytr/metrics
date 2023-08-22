@@ -9,7 +9,7 @@ import (
 
 // Storage interface should be implemented by any used storage
 type Storage interface {
-	InitializeMetrics(ctx context.Context, restore *bool) error
+	InitializeMetrics(ctx context.Context, restore bool) error
 	StoreMetrics(ctx context.Context) error
 	UpdateGauge(ctx context.Context, name string, value *float64) (*float64, error)
 	UpdateCounter(ctx context.Context, name string, value *int64) (*int64, error)

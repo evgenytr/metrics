@@ -20,8 +20,8 @@ import (
 
 type monitor struct {
 	metrics     map[string]*metric.Metrics
-	hostAddress *string
-	key         *string
+	hostAddress string
+	key         string
 }
 
 // Monitor interface describes .
@@ -88,7 +88,7 @@ func initMap() (initialMap map[string]*metric.Metrics, err error) {
 }
 
 // NewMonitor returns
-func NewMonitor(hostAddress, key *string) (m Monitor, err error) {
+func NewMonitor(hostAddress, key string) (m Monitor, err error) {
 	initialMap, err := initMap()
 	if err != nil {
 		return
@@ -317,7 +317,7 @@ func (m *monitor) ReportMetrics() (err error) {
 	client.SetPreRequestHook(func(c *resty.Client, req *http.Request) (err error) {
 
 		fmt.Println("On before request")
-		if m.key != nil && *m.key != "" {
+		if m.key != "" {
 			hash := sha256.New()
 
 			bodyBytes, errBody := io.ReadAll(req.Body)
@@ -328,7 +328,7 @@ func (m *monitor) ReportMetrics() (err error) {
 
 			req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
-			keyBytes := []byte(*m.key)
+			keyBytes := []byte(m.key)
 
 			src := append(bodyBytes, keyBytes...)
 			hash.Write(src)
@@ -349,7 +349,7 @@ func (m *monitor) ReportMetrics() (err error) {
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Accept-Encoding", "gzip").
 		SetBody(metricsBatch).
-		Post(fmt.Sprintf("%v/updates/", *m.hostAddress))
+		Post(fmt.Sprintf("%v/updates/", m.hostAddress))
 
 	//TODO: properly handle connection refused error (don't quit goroutine)
 	//but quit on fatal error

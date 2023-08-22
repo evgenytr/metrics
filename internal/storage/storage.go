@@ -10,7 +10,7 @@ import (
 )
 
 // NewStorage returns Storage interface to memstorage or database depending on params.
-func NewStorage(db *sql.DB, fileStoragePath *string) interfaces.Storage {
+func NewStorage(db *sql.DB, fileStoragePath string) interfaces.Storage {
 	if db != nil {
 		return database.NewStorage(db)
 	}

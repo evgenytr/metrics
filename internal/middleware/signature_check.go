@@ -30,7 +30,7 @@ func (r *signatureResponseWriter) Write(b []byte) (size int, err error) {
 }
 
 // WithSignatureCheck wraps handler with middleware that checks signature.
-func WithSignatureCheck(key *string) func(next http.Handler) http.Handler {
+func WithSignatureCheck(key string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		checkFn := func(res http.ResponseWriter, req *http.Request) {
 			responseData := &signatureResponseData{h: sha256.New()}
@@ -40,14 +40,14 @@ func WithSignatureCheck(key *string) func(next http.Handler) http.Handler {
 			}
 
 			//compare incoming hash with calculated
-			if key != nil && *key != "" {
+			if key != "" {
 				sr.Header().Set("Trailer", "HashSHA256")
 				incomingHash := req.Header["Hashsha256"]
 				if len(incomingHash) != 0 {
 					hash := sha256.New()
 					bodyBytes, _ := io.ReadAll(req.Body)
 					req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-					keyBytes := []byte(*key)
+					keyBytes := []byte(key)
 					src := append(bodyBytes, keyBytes...)
 					hash.Write(src)
 					dst := hash.Sum(nil)
@@ -61,8 +61,8 @@ func WithSignatureCheck(key *string) func(next http.Handler) http.Handler {
 
 			next.ServeHTTP(&sr, req)
 
-			if key != nil && *key != "" {
-				keyBytes := []byte(*key)
+			if key != "" {
+				keyBytes := []byte(key)
 				sr.responseData.h.Write(keyBytes)
 				dst := sr.responseData.h.Sum(nil)
 				encodedDst := base64.StdEncoding.EncodeToString(dst)

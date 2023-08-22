@@ -28,10 +28,10 @@ type Worker struct {
 type workerFunc func() error
 
 // NewQueue creates and returns pointer to new Queue of designated size
-func NewQueue(bufSize *int64) *Queue {
-	if bufSize != nil && *bufSize > 0 {
+func NewQueue(bufSize int64) *Queue {
+	if bufSize > 0 {
 		return &Queue{
-			ch: make(chan *Task, *bufSize),
+			ch: make(chan *Task, bufSize),
 		}
 	}
 
@@ -53,11 +53,11 @@ func (q *Queue) close() {
 }
 
 // ScheduleTasks fills the Queue with tasks.
-func (q *Queue) ScheduleTasks(interval *time.Duration) {
+func (q *Queue) ScheduleTasks(interval time.Duration) {
 	taskID := 0
 	defer q.close()
 	for {
-		time.Sleep(*interval)
+		time.Sleep(interval)
 		q.push(&Task{id: taskID})
 		taskID++
 	}
@@ -87,8 +87,8 @@ func (w *Worker) Loop(ctx context.Context, cancelCtx context.CancelCauseFunc, fn
 
 		if err != nil {
 			for _, retryInterval := range errorHandling.RepeatedAttemptsIntervals {
-				fmt.Printf("worker %d retrying in %s\n", w.id, *retryInterval)
-				time.Sleep(*retryInterval)
+				fmt.Printf("worker %d retrying in %s\n", w.id, retryInterval)
+				time.Sleep(retryInterval)
 				err = fn()
 				if err == nil {
 					break

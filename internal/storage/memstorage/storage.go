@@ -14,11 +14,11 @@ import (
 
 type memStorage struct {
 	metricsMap      map[string]*metric.Metrics
-	fileStoragePath *string
+	fileStoragePath string
 }
 
 // NewStorage returns pointer to memStorage struct.
-func NewStorage(fileStoragePath *string) interfaces.Storage {
+func NewStorage(fileStoragePath string) interfaces.Storage {
 	return &memStorage{
 		metricsMap:      make(map[string]*metric.Metrics),
 		fileStoragePath: fileStoragePath,
@@ -33,16 +33,16 @@ func (ms memStorage) Ping(_ context.Context) (err error) {
 }
 
 // InitializeMetrics loads saved to file metric values.
-func (ms memStorage) InitializeMetrics(_ context.Context, restore *bool) (err error) {
+func (ms memStorage) InitializeMetrics(_ context.Context, restore bool) (err error) {
 	fmt.Println("init metrics")
-	if !*restore {
+	if !restore {
 		return
 	}
-	if ms.fileStoragePath == nil || *ms.fileStoragePath == "" {
+	if ms.fileStoragePath == "" {
 		err = fmt.Errorf("no file storage path")
 		return
 	}
-	data, err := os.ReadFile(*ms.fileStoragePath)
+	data, err := os.ReadFile(ms.fileStoragePath)
 	if err != nil {
 		return
 	}
@@ -63,7 +63,7 @@ func (ms memStorage) InitializeMetrics(_ context.Context, restore *bool) (err er
 // StoreMetrics saves metrics values to file.
 func (ms memStorage) StoreMetrics(_ context.Context) (err error) {
 	fmt.Println("store metrics")
-	if ms.fileStoragePath == nil || *ms.fileStoragePath == "" {
+	if ms.fileStoragePath == "" {
 		err = fmt.Errorf("no file storage path")
 		return
 	}
@@ -71,7 +71,7 @@ func (ms memStorage) StoreMetrics(_ context.Context) (err error) {
 	if err != nil {
 		return
 	}
-	err = os.WriteFile(*ms.fileStoragePath, jsonRes, 0666)
+	err = os.WriteFile(ms.fileStoragePath, jsonRes, 0666)
 	return
 }
 

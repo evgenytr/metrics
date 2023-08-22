@@ -14,10 +14,10 @@ func main() {
 
 	host, pollInterval, reportInterval, key, rateLimit := config.GetAgentConfig()
 
-	fmt.Println(*host, *pollInterval, *reportInterval, *key, *rateLimit)
-	hostAddress := fmt.Sprintf("http://%v", *host)
+	fmt.Println(host, pollInterval, reportInterval, key, rateLimit)
+	hostAddress := fmt.Sprintf("http://%v", host)
 
-	currMetrics, err := monitor.NewMonitor(&hostAddress, key)
+	currMetrics, err := monitor.NewMonitor(hostAddress, key)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -25,8 +25,8 @@ func main() {
 	ctx := context.Background()
 	workerCtx, cancelWorkerCtx := context.WithCancelCause(ctx)
 	//create poll and report queues
-	pollQueue := monitor.NewQueue(nil)
-	extraPollQueue := monitor.NewQueue(nil)
+	pollQueue := monitor.NewQueue(0)
+	extraPollQueue := monitor.NewQueue(0)
 	reportQueue := monitor.NewQueue(rateLimit)
 
 	//create workers
@@ -40,11 +40,11 @@ func main() {
 	extraPollWorker := monitor.NewWorker(extraPollWorkerID, extraPollQueue)
 	go extraPollWorker.Loop(workerCtx, cancelWorkerCtx, currMetrics.PollAdditionalMetrics)
 
-	if rateLimit == nil || *rateLimit <= 0 {
+	if rateLimit <= 0 {
 		reportWorker := monitor.NewWorker(reportWorkerID, reportQueue)
 		go reportWorker.Loop(workerCtx, cancelWorkerCtx, currMetrics.ReportMetrics)
 	} else {
-		for i := int64(0); i < *rateLimit; i++ {
+		for i := int64(0); i < rateLimit; i++ {
 			reportWorker := monitor.NewWorker(i+reportWorkerID, reportQueue)
 			go reportWorker.Loop(workerCtx, cancelWorkerCtx, currMetrics.ReportMetrics)
 		}
