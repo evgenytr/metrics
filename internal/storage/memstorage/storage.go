@@ -1,3 +1,5 @@
+// Package memstorage is used to store metrics info in memory
+// and periodically save it to file
 package memstorage
 
 import (
@@ -15,6 +17,7 @@ type memStorage struct {
 	fileStoragePath *string
 }
 
+// NewStorage returns pointer to memStorage struct.
 func NewStorage(fileStoragePath *string) interfaces.Storage {
 	return &memStorage{
 		metricsMap:      make(map[string]*metric.Metrics),
@@ -22,12 +25,14 @@ func NewStorage(fileStoragePath *string) interfaces.Storage {
 	}
 }
 
+// Ping makes no sense for memstorage, this is a stub to comply to interface.
 func (ms memStorage) Ping(_ context.Context) (err error) {
 	fmt.Println("ping memstorage")
 	err = fmt.Errorf("no database used")
 	return
 }
 
+// InitializeMetrics loads saved to file metric values.
 func (ms memStorage) InitializeMetrics(_ context.Context, restore *bool) (err error) {
 	fmt.Println("init metrics")
 	if !*restore {
@@ -55,6 +60,7 @@ func (ms memStorage) InitializeMetrics(_ context.Context, restore *bool) (err er
 	return
 }
 
+// StoreMetrics saves metrics values to file.
 func (ms memStorage) StoreMetrics(_ context.Context) (err error) {
 	fmt.Println("store metrics")
 	if ms.fileStoragePath == nil || *ms.fileStoragePath == "" {
@@ -69,6 +75,7 @@ func (ms memStorage) StoreMetrics(_ context.Context) (err error) {
 	return
 }
 
+// Update updates value of metric in memory.
 func (ms memStorage) Update(_ context.Context, metricType, name, value string) (newValue string, err error) {
 	if currMetric, ok := ms.metricsMap[name]; ok {
 		newValue, err = currMetric.Add(metricType, value)
@@ -82,6 +89,7 @@ func (ms memStorage) Update(_ context.Context, metricType, name, value string) (
 	return
 }
 
+// UpdateGauge updates gauge metric value.
 func (ms memStorage) UpdateGauge(_ context.Context, name string, value *float64) (newValue *float64, err error) {
 	if currMetric, ok := ms.metricsMap[name]; ok {
 		newValue, err = currMetric.UpdateGauge(value)
@@ -95,6 +103,7 @@ func (ms memStorage) UpdateGauge(_ context.Context, name string, value *float64)
 	return
 }
 
+// UpdateCounter updates counter metric value.
 func (ms memStorage) UpdateCounter(_ context.Context, name string, value *int64) (newValue *int64, err error) {
 	if currMetric, ok := ms.metricsMap[name]; ok {
 		newValue, err = currMetric.UpdateCounter(value)

@@ -1,11 +1,13 @@
+// Package main initializes metrics agent service and starts it.
 package main
 
 import (
 	"context"
 	"fmt"
+	"log"
+
 	"github.com/evgenytr/metrics.git/internal/config"
 	"github.com/evgenytr/metrics.git/internal/monitor"
-	"log"
 )
 
 func main() {

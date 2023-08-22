@@ -1,3 +1,4 @@
+// Package monitor contains bulk of working code for metrics agent service.
 package monitor
 
 import (
@@ -23,6 +24,7 @@ type monitor struct {
 	key         *string
 }
 
+// Monitor interface describes .
 type Monitor interface {
 	PollMetrics() error
 	PollAdditionalMetrics() error
@@ -85,6 +87,7 @@ func initMap() (initialMap map[string]*metric.Metrics, err error) {
 	return
 }
 
+// NewMonitor returns
 func NewMonitor(hostAddress, key *string) (m Monitor, err error) {
 	initialMap, err := initMap()
 	if err != nil {

@@ -1,3 +1,4 @@
+// Package monitor contains bulk of working code for metrics agent service.
 package monitor
 
 import (
@@ -8,14 +9,25 @@ import (
 	errorHandling "github.com/evgenytr/metrics.git/internal/errors"
 )
 
+// Task struct describes queued task.
 type Task struct {
 	id int
 }
 
+// Queue struct describes task queue.
 type Queue struct {
 	ch chan *Task
 }
 
+// Worker struct describes worker instance.
+type Worker struct {
+	id    int64
+	queue *Queue
+}
+
+type workerFunc func() error
+
+// NewQueue creates and returns pointer to new Queue of designated size
 func NewQueue(bufSize *int64) *Queue {
 	if bufSize != nil && *bufSize > 0 {
 		return &Queue{
@@ -40,6 +52,7 @@ func (q *Queue) close() {
 	close(q.ch)
 }
 
+// ScheduleTasks fills the Queue with tasks.
 func (q *Queue) ScheduleTasks(interval *time.Duration) {
 	taskID := 0
 	defer q.close()
@@ -50,11 +63,7 @@ func (q *Queue) ScheduleTasks(interval *time.Duration) {
 	}
 }
 
-type Worker struct {
-	id    int64
-	queue *Queue
-}
-
+// NewWorker creates and returns pointer to new Worker instance
 func NewWorker(id int64, queue *Queue) *Worker {
 	fmt.Println("worker created", id)
 	return &Worker{
@@ -63,8 +72,7 @@ func NewWorker(id int64, queue *Queue) *Worker {
 	}
 }
 
-type workerFunc func() error
-
+// Loop method sets function to run in worker
 func (w *Worker) Loop(ctx context.Context, cancelCtx context.CancelCauseFunc, fn workerFunc) {
 	for {
 		select {

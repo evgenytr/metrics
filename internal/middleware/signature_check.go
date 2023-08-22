@@ -1,3 +1,4 @@
+// Package middleware contains custom middleware for metrics server service.
 package middleware
 
 import (
@@ -21,16 +22,17 @@ type (
 	}
 )
 
+// Write is helper method to write bytes to response.
 func (r *signatureResponseWriter) Write(b []byte) (size int, err error) {
 	r.responseData.h.Write(b)
 	size, err = r.ResponseWriter.Write(b)
 	return
 }
 
+// WithSignatureCheck wraps handler with middleware that checks signature.
 func WithSignatureCheck(key *string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		checkFn := func(res http.ResponseWriter, req *http.Request) {
-			fmt.Println("WithSignatureCheck")
 			responseData := &signatureResponseData{h: sha256.New()}
 			sr := signatureResponseWriter{
 				ResponseWriter: res,
@@ -40,30 +42,20 @@ func WithSignatureCheck(key *string) func(next http.Handler) http.Handler {
 			//compare incoming hash with calculated
 			if key != nil && *key != "" {
 				sr.Header().Set("Trailer", "HashSHA256")
-
 				incomingHash := req.Header["Hashsha256"]
 				if len(incomingHash) != 0 {
-					fmt.Println(incomingHash, *key)
-
 					hash := sha256.New()
-
 					bodyBytes, _ := io.ReadAll(req.Body)
-
 					req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-
 					keyBytes := []byte(*key)
-
 					src := append(bodyBytes, keyBytes...)
 					hash.Write(src)
-
 					dst := hash.Sum(nil)
-
 					decodedIncomingHash, _ := base64.StdEncoding.DecodeString(incomingHash[0])
 
 					if !bytes.Equal(dst, decodedIncomingHash) {
 						sr.WriteHeader(http.StatusBadRequest)
 					}
-
 				}
 			}
 

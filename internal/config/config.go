@@ -1,3 +1,4 @@
+// Package config populates metric agent and server config data based on flags, environment variables or defaults
 package config
 
 import (
@@ -27,6 +28,7 @@ type serverConfig struct {
 	Key             string  `env:"KEY"`
 }
 
+// GetAgentConfig returns agent config params
 func GetAgentConfig() (host *string, pollIntervalOut, reportIntervalOut *time.Duration, key *string, rateLimit *int64) {
 
 	var cfg agentConfig
@@ -61,6 +63,8 @@ func GetAgentConfig() (host *string, pollIntervalOut, reportIntervalOut *time.Du
 
 	return
 }
+
+// GetServerConfig returns server config params
 func GetServerConfig() (host *string, storeIntervalOut *time.Duration, fileStoragePath *string, restore *bool, dbDSN, key *string) {
 
 	var storeIntervalIn *float64
@@ -104,7 +108,6 @@ func GetServerConfig() (host *string, storeIntervalOut *time.Duration, fileStora
 	return
 }
 
-// host=localhost user=postgres password=postgres sslmode=disable dbname=evgenytrefilov
 func getServerFlags() (host *string, storeInterval *float64, fileStoragePath *string, restore *bool, dbDSN, key *string) {
 	host = flag.String("a", "localhost:8080", "host address")
 	storeInterval = flag.Float64("i", 300, "file store interval")

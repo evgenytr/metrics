@@ -1,3 +1,4 @@
+// Package handlers contains handlers for all http requests to metrics server.
 package handlers
 
 import (
@@ -12,18 +13,20 @@ import (
 	"github.com/evgenytr/metrics.git/internal/metric"
 )
 
+// StorageHandler struct contains Storage interface.
 type StorageHandler struct {
 	storage interfaces.Storage
 }
 
+// NewStorageHandler returns StorageHandler for passed interface.
 func NewStorageHandler(storage interfaces.Storage) *StorageHandler {
 	return &StorageHandler{
 		storage: storage,
 	}
 }
 
-//TODO: add tests for JSON handlers
-
+// ProcessPostUpdateJSONRequest handler processes JSON POST request to /update/,
+// saves value of single metric.
 func (h *StorageHandler) ProcessPostUpdateJSONRequest(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Set("Content-Type", "application/json")
@@ -69,6 +72,8 @@ func (h *StorageHandler) ProcessPostUpdateJSONRequest(res http.ResponseWriter, r
 	res.WriteHeader(http.StatusOK)
 }
 
+// ProcessPostValueJSONRequest handler processes JSON POST request to /value/,
+// response is value of requested metric.
 func (h *StorageHandler) ProcessPostValueJSONRequest(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Set("Content-Type", "application/json")
@@ -119,6 +124,8 @@ func (h *StorageHandler) ProcessPostValueJSONRequest(res http.ResponseWriter, re
 	res.WriteHeader(http.StatusOK)
 }
 
+// ProcessPostUpdateRequest handles plain text request to /update/{type}/{name}/{value},
+// saves value of single metric.
 func (h *StorageHandler) ProcessPostUpdateRequest(res http.ResponseWriter, req *http.Request) {
 
 	const requiredRequestPathChunks = 5
@@ -157,6 +164,8 @@ func (h *StorageHandler) ProcessPostUpdateRequest(res http.ResponseWriter, req *
 	res.WriteHeader(http.StatusOK)
 }
 
+// ProcessGetValueRequest handles plain text Get request to /value/{type}/{name},
+// response is value of requested metric.
 func (h *StorageHandler) ProcessGetValueRequest(res http.ResponseWriter, req *http.Request) {
 
 	const requiredRequestPathChunks = 4
@@ -196,6 +205,8 @@ func (h *StorageHandler) ProcessGetValueRequest(res http.ResponseWriter, req *ht
 	res.WriteHeader(http.StatusOK)
 }
 
+// ProcessGetListRequest handles Get request to /,
+// response is list of all metrics names and values.
 func (h *StorageHandler) ProcessGetListRequest(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Set("Content-Type", "text/html")
@@ -217,6 +228,7 @@ func (h *StorageHandler) ProcessGetListRequest(res http.ResponseWriter, req *htt
 	res.WriteHeader(http.StatusOK)
 }
 
+// ProcessPingRequest handles Get request to /ping, used to check whether service is running and responding.
 func (h *StorageHandler) ProcessPingRequest(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Set("Content-Type", "text/html")
@@ -230,6 +242,8 @@ func (h *StorageHandler) ProcessPingRequest(res http.ResponseWriter, req *http.R
 	res.WriteHeader(http.StatusOK)
 }
 
+// ProcessPostUpdatesBatchJSONRequest handles POST JSON request to /updates/,
+// processes array of metrics and saves them all at once.
 func (h *StorageHandler) ProcessPostUpdatesBatchJSONRequest(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Set("Content-Type", "application/json")

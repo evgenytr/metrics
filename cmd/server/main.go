@@ -1,3 +1,4 @@
+// Package main initializes metrics server service and starts it.
 package main
 
 import (
@@ -15,7 +16,6 @@ import (
 	"github.com/evgenytr/metrics.git/internal/logging"
 	"github.com/evgenytr/metrics.git/internal/router"
 	"github.com/evgenytr/metrics.git/internal/storage"
-
 	"github.com/go-chi/chi/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )

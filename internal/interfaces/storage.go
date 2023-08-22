@@ -1,3 +1,4 @@
+// Package interfaces contains interfaces used across the services
 package interfaces
 
 import (
@@ -6,6 +7,7 @@ import (
 	"github.com/evgenytr/metrics.git/internal/metric"
 )
 
+// Storage interface should be implemented by any used storage
 type Storage interface {
 	InitializeMetrics(ctx context.Context, restore *bool) error
 	StoreMetrics(ctx context.Context) error

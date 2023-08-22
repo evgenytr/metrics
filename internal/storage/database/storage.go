@@ -163,6 +163,10 @@ func (dbs dbStorage) StoreMetrics(ctx context.Context) (err error) {
 		"ON CONFLICT (metric_name) DO UPDATE SET metric_value = EXCLUDED.metric_value, metric_delta = EXCLUDED.metric_delta",
 		MetricsTableName, strings.Join(insertValues, ", "))
 	fmt.Println(query)
+
+	//stmt, err := tx.Prepare(query)
+	//stmt.ExecContext(ctx)
+
 	_, err = tx.ExecContext(ctx, query)
 	if err != nil {
 		_ = tx.Rollback()
