@@ -46,14 +46,14 @@ func TestGetServerConfig(t *testing.T) {
 		wantStoreIntervalOut *time.Duration
 		wantFileStoragePath  *string
 		wantRestore          *bool
-		wantDbDSN            *string
+		wantDBDSN            *string
 		wantKey              *string
 	}{
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotHost, gotStoreIntervalOut, gotFileStoragePath, gotRestore, gotDbDSN, gotKey := GetServerConfig()
+			gotHost, gotStoreIntervalOut, gotFileStoragePath, gotRestore, gotDBDSN, gotKey := GetServerConfig()
 			if !reflect.DeepEqual(gotHost, tt.wantHost) {
 				t.Errorf("GetServerConfig() gotHost = %v, want %v", gotHost, tt.wantHost)
 			}
@@ -66,8 +66,8 @@ func TestGetServerConfig(t *testing.T) {
 			if !reflect.DeepEqual(gotRestore, tt.wantRestore) {
 				t.Errorf("GetServerConfig() gotRestore = %v, want %v", gotRestore, tt.wantRestore)
 			}
-			if !reflect.DeepEqual(gotDbDSN, tt.wantDbDSN) {
-				t.Errorf("GetServerConfig() gotDbDSN = %v, want %v", gotDbDSN, tt.wantDbDSN)
+			if !reflect.DeepEqual(gotDBDSN, tt.wantDBDSN) {
+				t.Errorf("GetServerConfig() gotDBDSN = %v, want %v", gotDBDSN, tt.wantDBDSN)
 			}
 			if !reflect.DeepEqual(gotKey, tt.wantKey) {
 				t.Errorf("GetServerConfig() gotKey = %v, want %v", gotKey, tt.wantKey)
@@ -116,14 +116,14 @@ func Test_getServerFlags(t *testing.T) {
 		wantStoreInterval   *float64
 		wantFileStoragePath *string
 		wantRestore         *bool
-		wantDbDSN           *string
+		wantDBDSN           *string
 		wantKey             *string
 	}{
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotHost, gotStoreInterval, gotFileStoragePath, gotRestore, gotDbDSN, gotKey := getServerFlags()
+			gotHost, gotStoreInterval, gotFileStoragePath, gotRestore, gotDBDSN, gotKey := getServerFlags()
 			if !reflect.DeepEqual(gotHost, tt.wantHost) {
 				t.Errorf("getServerFlags() gotHost = %v, want %v", gotHost, tt.wantHost)
 			}
@@ -136,8 +136,8 @@ func Test_getServerFlags(t *testing.T) {
 			if !reflect.DeepEqual(gotRestore, tt.wantRestore) {
 				t.Errorf("getServerFlags() gotRestore = %v, want %v", gotRestore, tt.wantRestore)
 			}
-			if !reflect.DeepEqual(gotDbDSN, tt.wantDbDSN) {
-				t.Errorf("getServerFlags() gotDbDSN = %v, want %v", gotDbDSN, tt.wantDbDSN)
+			if !reflect.DeepEqual(gotDBDSN, tt.wantDBDSN) {
+				t.Errorf("getServerFlags() gotDBDSN = %v, want %v", gotDBDSN, tt.wantDBDSN)
 			}
 			if !reflect.DeepEqual(gotKey, tt.wantKey) {
 				t.Errorf("getServerFlags() gotKey = %v, want %v", gotKey, tt.wantKey)
