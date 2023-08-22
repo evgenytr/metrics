@@ -218,7 +218,7 @@ func (h *StorageHandler) ProcessGetListRequest(res http.ResponseWriter, req *htt
 		processBadRequest(res, err)
 		return
 	}
-	for key, value := range *metricsMap {
+	for key, value := range metricsMap {
 		_, err = res.Write([]byte(fmt.Sprintf("%v\t%v\r", key, value)))
 		if err != nil {
 			fmt.Println(err)

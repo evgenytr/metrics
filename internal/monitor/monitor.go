@@ -74,10 +74,10 @@ func initMap() (initialMap map[string]*metric.Metrics, err error) {
 		switch metricType {
 		case metric.GaugeMetricType:
 			var value float64
-			initialMap[metricName], err = metric.CreateGauge(metricName, &value)
+			initialMap[metricName], err = metric.CreateGauge(metricName, value)
 		case metric.CounterMetricType:
 			var value int64
-			initialMap[metricName], err = metric.CreateCounter(metricName, &value)
+			initialMap[metricName], err = metric.CreateCounter(metricName, value)
 		}
 		if err != nil {
 			return
@@ -106,12 +106,12 @@ func (m *monitor) ResetPollCount() {
 }
 
 func updateGaugeMetric(metric *metric.Metrics, value float64) (err error) {
-	_, err = metric.UpdateGauge(&value)
+	_, err = metric.UpdateGauge(value)
 	return
 }
 
 func updateCounterMetric(metric *metric.Metrics, value int64) (err error) {
-	_, err = metric.UpdateCounter(&value)
+	_, err = metric.UpdateCounter(value)
 	return
 }
 

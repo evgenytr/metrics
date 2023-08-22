@@ -90,7 +90,7 @@ func (ms memStorage) Update(_ context.Context, metricType, name, value string) (
 }
 
 // UpdateGauge updates gauge metric value.
-func (ms memStorage) UpdateGauge(_ context.Context, name string, value *float64) (newValue *float64, err error) {
+func (ms memStorage) UpdateGauge(_ context.Context, name string, value float64) (newValue float64, err error) {
 	if currMetric, ok := ms.metricsMap[name]; ok {
 		newValue, err = currMetric.UpdateGauge(value)
 		if err != nil {
@@ -104,7 +104,7 @@ func (ms memStorage) UpdateGauge(_ context.Context, name string, value *float64)
 }
 
 // UpdateCounter updates counter metric value.
-func (ms memStorage) UpdateCounter(_ context.Context, name string, value *int64) (newValue *int64, err error) {
+func (ms memStorage) UpdateCounter(_ context.Context, name string, value int64) (newValue int64, err error) {
 	if currMetric, ok := ms.metricsMap[name]; ok {
 		newValue, err = currMetric.UpdateCounter(value)
 		if err != nil {
@@ -130,7 +130,7 @@ func (ms memStorage) ReadValue(_ context.Context, metricType, name string) (valu
 	return
 }
 
-func (ms memStorage) GetGaugeValue(_ context.Context, name string) (value *float64, err error) {
+func (ms memStorage) GetGaugeValue(_ context.Context, name string) (value float64, err error) {
 	if currMetric, ok := ms.metricsMap[name]; ok {
 		if currMetric.GetType() != metric.GaugeMetricType {
 			err = fmt.Errorf("metric type mismatch")
@@ -143,7 +143,7 @@ func (ms memStorage) GetGaugeValue(_ context.Context, name string) (value *float
 	return
 }
 
-func (ms memStorage) GetCounterValue(_ context.Context, name string) (value *int64, err error) {
+func (ms memStorage) GetCounterValue(_ context.Context, name string) (value int64, err error) {
 	if currMetric, ok := ms.metricsMap[name]; ok {
 		if currMetric.GetType() != metric.CounterMetricType {
 			err = fmt.Errorf("metric type mismatch")
@@ -156,18 +156,18 @@ func (ms memStorage) GetCounterValue(_ context.Context, name string) (value *int
 	return
 }
 
-func (ms memStorage) ListAll(_ context.Context) (metricsMap *map[string]string, err error) {
+func (ms memStorage) ListAll(_ context.Context) (metricsMap map[string]string, err error) {
 	newMetricsMap := make(map[string]string, len(ms.metricsMap))
 	for key, value := range ms.metricsMap {
 		newMetricsMap[key] = value.GetValue()
 	}
-	return &newMetricsMap, err
+	return newMetricsMap, err
 }
 
-func (ms memStorage) GetMetricsMap(_ context.Context) (metricsMap *map[string]*metric.Metrics, err error) {
+func (ms memStorage) GetMetricsMap(_ context.Context) (metricsMap map[string]*metric.Metrics, err error) {
 	newMetricsMap := make(map[string]*metric.Metrics, len(ms.metricsMap))
 	for key, value := range ms.metricsMap {
 		newMetricsMap[key] = value
 	}
-	return &newMetricsMap, err
+	return newMetricsMap, err
 }
