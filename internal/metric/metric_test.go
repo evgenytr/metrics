@@ -36,7 +36,7 @@ func TestCreate(t *testing.T) {
 func TestCreateCounter(t *testing.T) {
 	type args struct {
 		name  string
-		value *int64
+		value int64
 	}
 	tests := []struct {
 		name          string
@@ -63,7 +63,7 @@ func TestCreateCounter(t *testing.T) {
 func TestCreateGauge(t *testing.T) {
 	type args struct {
 		name  string
-		value *float64
+		value float64
 	}
 	tests := []struct {
 		name          string
@@ -91,8 +91,8 @@ func TestMetrics_Add(t *testing.T) {
 	type fields struct {
 		ID    string
 		MType string
-		Delta *int64
-		Value *float64
+		Delta int64
+		Value float64
 	}
 	type args struct {
 		metricType string
@@ -131,13 +131,13 @@ func TestMetrics_GetCounterValue(t *testing.T) {
 	type fields struct {
 		ID    string
 		MType string
-		Delta *int64
-		Value *float64
+		Delta int64
+		Value float64
 	}
 	tests := []struct {
 		name      string
 		fields    fields
-		wantValue *int64
+		wantValue int64
 	}{
 		// TODO: Add test cases.
 	}
@@ -149,7 +149,7 @@ func TestMetrics_GetCounterValue(t *testing.T) {
 				Delta: tt.fields.Delta,
 				Value: tt.fields.Value,
 			}
-			if gotValue := metric.GetCounterValue(); !reflect.DeepEqual(gotValue, tt.wantValue) {
+			if gotValue := metric.GetCounterValue(); gotValue != tt.wantValue {
 				t.Errorf("GetCounterValue() = %v, want %v", gotValue, tt.wantValue)
 			}
 		})
@@ -160,13 +160,13 @@ func TestMetrics_GetGaugeValue(t *testing.T) {
 	type fields struct {
 		ID    string
 		MType string
-		Delta *int64
-		Value *float64
+		Delta int64
+		Value float64
 	}
 	tests := []struct {
 		name      string
 		fields    fields
-		wantValue *float64
+		wantValue float64
 	}{
 		// TODO: Add test cases.
 	}
@@ -178,7 +178,7 @@ func TestMetrics_GetGaugeValue(t *testing.T) {
 				Delta: tt.fields.Delta,
 				Value: tt.fields.Value,
 			}
-			if gotValue := metric.GetGaugeValue(); !reflect.DeepEqual(gotValue, tt.wantValue) {
+			if gotValue := metric.GetGaugeValue(); gotValue != tt.wantValue {
 				t.Errorf("GetGaugeValue() = %v, want %v", gotValue, tt.wantValue)
 			}
 		})
@@ -189,8 +189,8 @@ func TestMetrics_GetType(t *testing.T) {
 	type fields struct {
 		ID    string
 		MType string
-		Delta *int64
-		Value *float64
+		Delta int64
+		Value float64
 	}
 	tests := []struct {
 		name      string
@@ -218,8 +218,8 @@ func TestMetrics_GetValue(t *testing.T) {
 	type fields struct {
 		ID    string
 		MType string
-		Delta *int64
-		Value *float64
+		Delta int64
+		Value float64
 	}
 	tests := []struct {
 		name      string
@@ -247,8 +247,8 @@ func TestMetrics_ResetCounter(t *testing.T) {
 	type fields struct {
 		ID    string
 		MType string
-		Delta *int64
-		Value *float64
+		Delta int64
+		Value float64
 	}
 	tests := []struct {
 		name    string
@@ -276,17 +276,17 @@ func TestMetrics_UpdateCounter(t *testing.T) {
 	type fields struct {
 		ID    string
 		MType string
-		Delta *int64
-		Value *float64
+		Delta int64
+		Value float64
 	}
 	type args struct {
-		value *int64
+		value int64
 	}
 	tests := []struct {
 		name         string
 		fields       fields
 		args         args
-		wantNewValue *int64
+		wantNewValue int64
 		wantErr      bool
 	}{
 		// TODO: Add test cases.
@@ -304,7 +304,7 @@ func TestMetrics_UpdateCounter(t *testing.T) {
 				t.Errorf("UpdateCounter() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(gotNewValue, tt.wantNewValue) {
+			if gotNewValue != tt.wantNewValue {
 				t.Errorf("UpdateCounter() gotNewValue = %v, want %v", gotNewValue, tt.wantNewValue)
 			}
 		})
@@ -315,17 +315,17 @@ func TestMetrics_UpdateGauge(t *testing.T) {
 	type fields struct {
 		ID    string
 		MType string
-		Delta *int64
-		Value *float64
+		Delta int64
+		Value float64
 	}
 	type args struct {
-		value *float64
+		value float64
 	}
 	tests := []struct {
 		name         string
 		fields       fields
 		args         args
-		wantNewValue *float64
+		wantNewValue float64
 		wantErr      bool
 	}{
 		// TODO: Add test cases.
@@ -343,7 +343,7 @@ func TestMetrics_UpdateGauge(t *testing.T) {
 				t.Errorf("UpdateGauge() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(gotNewValue, tt.wantNewValue) {
+			if gotNewValue != tt.wantNewValue {
 				t.Errorf("UpdateGauge() gotNewValue = %v, want %v", gotNewValue, tt.wantNewValue)
 			}
 		})
