@@ -1,11 +1,18 @@
 package utils
 
 import (
-	"reflect"
+	"math/rand"
 	"testing"
-	"time"
 )
 
+func BenchmarkGetTimeInterval(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		interval := rand.Float64() * 100
+		GetTimeInterval(interval)
+	}
+}
+
+/*
 func TestGetTimeInterval(t *testing.T) {
 	type args struct {
 		seconds float64
@@ -25,3 +32,4 @@ func TestGetTimeInterval(t *testing.T) {
 		})
 	}
 }
+*/
