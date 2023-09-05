@@ -21,8 +21,8 @@ type Queue struct {
 
 // Worker struct describes worker instance.
 type Worker struct {
-	id    int64
 	queue *Queue
+	id    int64
 }
 
 type workerFunc func() error

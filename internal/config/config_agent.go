@@ -12,9 +12,9 @@ import (
 
 type agentConfig struct {
 	Host           string  `env:"ADDRESS"`
+	Key            string  `env:"KEY"`
 	ReportInterval float64 `env:"REPORT_INTERVAL"`
 	PollInterval   float64 `env:"POLL_INTERVAL"`
-	Key            string  `env:"KEY"`
 	RateLimit      int64   `env:"RATE_LIMIT"`
 }
 

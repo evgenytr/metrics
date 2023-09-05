@@ -13,11 +13,11 @@ import (
 
 type serverConfig struct {
 	Host            string  `env:"ADDRESS"`
-	StoreInterval   float64 `env:"STORE_INTERVAL"`
 	FileStoragePath string  `env:"FILE_STORAGE_PATH"`
-	Restore         bool    `env:"RESTORE"`
 	DatabaseDSN     string  `env:"DATABASE_DSN"`
 	Key             string  `env:"KEY"`
+	StoreInterval   float64 `env:"STORE_INTERVAL"`
+	Restore         bool    `env:"RESTORE"`
 }
 
 // GetServerConfig returns server config params
