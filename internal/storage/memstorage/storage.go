@@ -78,7 +78,7 @@ func (ms memStorage) StoreMetrics(_ context.Context) (err error) {
 // Update updates value of metric in memory.
 func (ms memStorage) Update(_ context.Context, metricType, name, value string) (newValue string, err error) {
 	if currMetric, ok := ms.metricsMap[name]; ok {
-		newValue, err = currMetric.Add(metricType, value)
+		newValue, err = currMetric.UpdateValue(metricType, value)
 		if err != nil {
 			return
 		}

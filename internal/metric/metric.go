@@ -21,7 +21,7 @@ func Create(metricType, name, value string) (newMetric *Metrics, err error) {
 		ID:    name,
 		MType: metricType,
 	}
-	_, err = newMetric.Add(metricType, value)
+	_, err = newMetric.UpdateValue(metricType, value)
 	return
 }
 
@@ -68,7 +68,7 @@ func (metric *Metrics) GetType() (value string) {
 	return metric.MType
 }
 
-func (metric *Metrics) Add(metricType, value string) (newValue string, err error) {
+func (metric *Metrics) UpdateValue(metricType, value string) (newValue string, err error) {
 	fmt.Println("Metric Add")
 	if metric.MType != metricType {
 		err = fmt.Errorf("metric type mismatch")

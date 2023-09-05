@@ -1,8 +1,6 @@
 package logging
 
 import (
-	"go.uber.org/zap"
-	"reflect"
 	"testing"
 )
 
@@ -11,22 +9,39 @@ func TestNewLogger(t *testing.T) {
 		config string
 	}
 	tests := []struct {
-		name       string
-		args       args
-		wantLogger *zap.Logger
-		wantErr    bool
+		name    string
+		args    args
+		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Development",
+			args: args{
+				config: NewDevelopment,
+			},
+			wantErr: false,
+		},
+		{
+			name: "Production",
+			args: args{
+				config: NewProduction,
+			},
+			wantErr: false,
+		},
+		{
+			name: "Default",
+			args: args{
+				config: "Any string returns Development logger",
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
+
 		t.Run(tt.name, func(t *testing.T) {
-			gotLogger, err := NewLogger(tt.args.config)
+			_, err := NewLogger(tt.args.config)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewLogger() error = %v, wantErr %v", err, tt.wantErr)
 				return
-			}
-			if !reflect.DeepEqual(gotLogger, tt.wantLogger) {
-				t.Errorf("NewLogger() gotLogger = %v, want %v", gotLogger, tt.wantLogger)
 			}
 		})
 	}

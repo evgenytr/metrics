@@ -8,6 +8,8 @@ import (
 )
 
 // Storage interface should be implemented by any used storage
+//
+//go:generate mockgen -destination=mocks/storage_mock.gen.go -package=mocks . Storage
 type Storage interface {
 	InitializeMetrics(ctx context.Context, restore bool) error
 	StoreMetrics(ctx context.Context) error

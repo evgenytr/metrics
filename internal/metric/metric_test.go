@@ -87,46 +87,6 @@ func TestCreateGauge(t *testing.T) {
 	}
 }
 
-func TestMetrics_Add(t *testing.T) {
-	type fields struct {
-		ID    string
-		MType string
-		Delta int64
-		Value float64
-	}
-	type args struct {
-		metricType string
-		value      string
-	}
-	tests := []struct {
-		name         string
-		fields       fields
-		args         args
-		wantNewValue string
-		wantErr      bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			metric := &Metrics{
-				ID:    tt.fields.ID,
-				MType: tt.fields.MType,
-				Delta: tt.fields.Delta,
-				Value: tt.fields.Value,
-			}
-			gotNewValue, err := metric.Add(tt.args.metricType, tt.args.value)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Add() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotNewValue != tt.wantNewValue {
-				t.Errorf("Add() gotNewValue = %v, want %v", gotNewValue, tt.wantNewValue)
-			}
-		})
-	}
-}
-
 func TestMetrics_GetCounterValue(t *testing.T) {
 	type fields struct {
 		ID    string
@@ -345,6 +305,46 @@ func TestMetrics_UpdateGauge(t *testing.T) {
 			}
 			if gotNewValue != tt.wantNewValue {
 				t.Errorf("UpdateGauge() gotNewValue = %v, want %v", gotNewValue, tt.wantNewValue)
+			}
+		})
+	}
+}
+
+func TestMetrics_UpdateValue(t *testing.T) {
+	type fields struct {
+		ID    string
+		MType string
+		Delta int64
+		Value float64
+	}
+	type args struct {
+		metricType string
+		value      string
+	}
+	tests := []struct {
+		name         string
+		fields       fields
+		args         args
+		wantNewValue string
+		wantErr      bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			metric := &Metrics{
+				ID:    tt.fields.ID,
+				MType: tt.fields.MType,
+				Delta: tt.fields.Delta,
+				Value: tt.fields.Value,
+			}
+			gotNewValue, err := metric.UpdateValue(tt.args.metricType, tt.args.value)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("UpdateValue() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotNewValue != tt.wantNewValue {
+				t.Errorf("UpdateValue() gotNewValue = %v, want %v", gotNewValue, tt.wantNewValue)
 			}
 		})
 	}
