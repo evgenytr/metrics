@@ -70,7 +70,7 @@ func (dbs dbStorage) InitializeMetrics(ctx context.Context, restore bool) (err e
 	version, dirty, err := m.Version()
 	fmt.Println(version, dirty, err)
 
-	if err := m.Up(); err != nil {
+	if err = m.Up(); err != nil {
 		fmt.Println(err)
 		if !errors.Is(err, migrate.ErrNoChange) {
 			return fmt.Errorf("failed to apply migrations to DB: %w", err)
