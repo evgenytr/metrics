@@ -30,7 +30,7 @@ type dbStorage struct {
 func NewStorage(db *sql.DB) interfaces.Storage {
 	return &dbStorage{
 		db:    db,
-		ms:    memstorage.NewStorage(nil),
+		ms:    memstorage.NewStorage(""),
 		mutex: &sync.Mutex{},
 	}
 }
@@ -46,7 +46,7 @@ func (dbs dbStorage) Ping(ctx context.Context) (err error) {
 	return
 }
 
-func (dbs dbStorage) InitializeMetrics(ctx context.Context, restore *bool) (err error) {
+func (dbs dbStorage) InitializeMetrics(ctx context.Context, restore bool) (err error) {
 
 	const databaseExecTimeout = 3
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, databaseExecTimeout*time.Second)
@@ -77,7 +77,7 @@ func (dbs dbStorage) InitializeMetrics(ctx context.Context, restore *bool) (err 
 		}
 	}
 
-	if !*restore {
+	if !restore {
 		return
 	}
 
@@ -110,9 +110,9 @@ func (dbs dbStorage) InitializeMetrics(ctx context.Context, restore *bool) (err 
 
 		switch metricType {
 		case metric.GaugeMetricType:
-			_, err = dbs.ms.UpdateGauge(ctx, metricName, &metricValue)
+			_, err = dbs.ms.UpdateGauge(ctx, metricName, metricValue)
 		case metric.CounterMetricType:
-			_, err = dbs.ms.UpdateCounter(ctx, metricName, &metricDelta)
+			_, err = dbs.ms.UpdateCounter(ctx, metricName, metricDelta)
 		default:
 			err = fmt.Errorf("metric type not supported")
 		}
@@ -133,20 +133,20 @@ func (dbs dbStorage) StoreMetrics(ctx context.Context) (err error) {
 	}
 
 	//nothing to store
-	if len(*metricsMap) == 0 {
+	if len(metricsMap) == 0 {
 		return
 	}
 
-	insertValues := make([]string, len(*metricsMap))
+	insertValues := make([]string, len(metricsMap))
 	valuesIndex := 0
 
-	for _, value := range *metricsMap {
+	for _, value := range metricsMap {
 		switch value.MType {
 		case metric.GaugeMetricType:
-			currInsertValues := fmt.Sprintf("(DEFAULT, '%v', '%v', %v, %v)", value.ID, value.MType, *value.Value, "NULL")
+			currInsertValues := fmt.Sprintf("(DEFAULT, '%v', '%v', %v, %v)", value.ID, value.MType, value.Value, "NULL")
 			insertValues[valuesIndex] = currInsertValues
 		case metric.CounterMetricType:
-			currInsertValues := fmt.Sprintf("(DEFAULT, '%v', '%v', %v, %v)", value.ID, value.MType, "NULL", *value.Delta)
+			currInsertValues := fmt.Sprintf("(DEFAULT, '%v', '%v', %v, %v)", value.ID, value.MType, "NULL", value.Delta)
 			insertValues[valuesIndex] = currInsertValues
 		}
 		valuesIndex++
@@ -163,6 +163,10 @@ func (dbs dbStorage) StoreMetrics(ctx context.Context) (err error) {
 		"ON CONFLICT (metric_name) DO UPDATE SET metric_value = EXCLUDED.metric_value, metric_delta = EXCLUDED.metric_delta",
 		MetricsTableName, strings.Join(insertValues, ", "))
 	fmt.Println(query)
+
+	//stmt, err := tx.Prepare(query)
+	//stmt.ExecContext(ctx)
+
 	_, err = tx.ExecContext(ctx, query)
 	if err != nil {
 		_ = tx.Rollback()
@@ -181,12 +185,12 @@ func (dbs dbStorage) Update(ctx context.Context, metricType, name, value string)
 	return
 }
 
-func (dbs dbStorage) UpdateGauge(ctx context.Context, name string, value *float64) (newValue *float64, err error) {
+func (dbs dbStorage) UpdateGauge(ctx context.Context, name string, value float64) (newValue float64, err error) {
 	newValue, err = dbs.ms.UpdateGauge(ctx, name, value)
 	return
 }
 
-func (dbs dbStorage) UpdateCounter(ctx context.Context, name string, value *int64) (newValue *int64, err error) {
+func (dbs dbStorage) UpdateCounter(ctx context.Context, name string, value int64) (newValue int64, err error) {
 	newValue, err = dbs.ms.UpdateCounter(ctx, name, value)
 	return
 }
@@ -196,22 +200,22 @@ func (dbs dbStorage) ReadValue(ctx context.Context, metricType, name string) (va
 	return
 }
 
-func (dbs dbStorage) GetGaugeValue(ctx context.Context, name string) (value *float64, err error) {
+func (dbs dbStorage) GetGaugeValue(ctx context.Context, name string) (value float64, err error) {
 	value, err = dbs.ms.GetGaugeValue(ctx, name)
 	return
 }
 
-func (dbs dbStorage) GetCounterValue(ctx context.Context, name string) (value *int64, err error) {
+func (dbs dbStorage) GetCounterValue(ctx context.Context, name string) (value int64, err error) {
 	value, err = dbs.ms.GetCounterValue(ctx, name)
 	return
 }
 
-func (dbs dbStorage) ListAll(ctx context.Context) (metricsMap *map[string]string, err error) {
+func (dbs dbStorage) ListAll(ctx context.Context) (metricsMap map[string]string, err error) {
 	metricsMap, err = dbs.ms.ListAll(ctx)
 	return
 }
 
-func (dbs dbStorage) GetMetricsMap(ctx context.Context) (metricsMap *map[string]*metric.Metrics, err error) {
+func (dbs dbStorage) GetMetricsMap(ctx context.Context) (metricsMap map[string]*metric.Metrics, err error) {
 	metricsMap, err = dbs.ms.GetMetricsMap(ctx)
 	return
 }

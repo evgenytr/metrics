@@ -1,57 +1,72 @@
+// Package monitor contains bulk of working code for metrics agent service.
 package monitor
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
+	"io"
 	"math/rand"
+	"net/http"
 	"runtime"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/mem"
 
 	"github.com/evgenytr/metrics.git/internal/metric"
 )
 
 type monitor struct {
-	metrics map[string]*metric.Metrics
+	metrics     map[string]*metric.Metrics
+	hostAddress string
+	key         string
 }
 
+// Monitor interface describes .
 type Monitor interface {
 	PollMetrics() error
-	ReportMetrics(host string) error
+	PollAdditionalMetrics() error
+	ReportMetrics() error
 	ResetPollCount()
 }
 
 func initMap() (initialMap map[string]*metric.Metrics, err error) {
 
 	var metricList = map[string]string{
-		"Alloc":         metric.GaugeMetricType,
-		"BuckHashSys":   metric.GaugeMetricType,
-		"Frees":         metric.GaugeMetricType,
-		"GCSys":         metric.GaugeMetricType,
-		"HeapAlloc":     metric.GaugeMetricType,
-		"HeapIdle":      metric.GaugeMetricType,
-		"HeapInuse":     metric.GaugeMetricType,
-		"HeapObjects":   metric.GaugeMetricType,
-		"HeapReleased":  metric.GaugeMetricType,
-		"HeapSys":       metric.GaugeMetricType,
-		"LastGC":        metric.GaugeMetricType,
-		"Lookups":       metric.GaugeMetricType,
-		"MCacheInuse":   metric.GaugeMetricType,
-		"MCacheSys":     metric.GaugeMetricType,
-		"MSpanInuse":    metric.GaugeMetricType,
-		"MSpanSys":      metric.GaugeMetricType,
-		"Mallocs":       metric.GaugeMetricType,
-		"NextGC":        metric.GaugeMetricType,
-		"OtherSys":      metric.GaugeMetricType,
-		"PauseTotalNs":  metric.GaugeMetricType,
-		"StackInuse":    metric.GaugeMetricType,
-		"StackSys":      metric.GaugeMetricType,
-		"Sys":           metric.GaugeMetricType,
-		"TotalAlloc":    metric.GaugeMetricType,
-		"PollCount":     metric.CounterMetricType,
-		"NumForcedGC":   metric.GaugeMetricType,
-		"NumGC":         metric.GaugeMetricType,
-		"GCCPUFraction": metric.GaugeMetricType,
-		"RandomValue":   metric.GaugeMetricType,
+		"Alloc":           metric.GaugeMetricType,
+		"BuckHashSys":     metric.GaugeMetricType,
+		"Frees":           metric.GaugeMetricType,
+		"GCSys":           metric.GaugeMetricType,
+		"HeapAlloc":       metric.GaugeMetricType,
+		"HeapIdle":        metric.GaugeMetricType,
+		"HeapInuse":       metric.GaugeMetricType,
+		"HeapObjects":     metric.GaugeMetricType,
+		"HeapReleased":    metric.GaugeMetricType,
+		"HeapSys":         metric.GaugeMetricType,
+		"LastGC":          metric.GaugeMetricType,
+		"Lookups":         metric.GaugeMetricType,
+		"MCacheInuse":     metric.GaugeMetricType,
+		"MCacheSys":       metric.GaugeMetricType,
+		"MSpanInuse":      metric.GaugeMetricType,
+		"MSpanSys":        metric.GaugeMetricType,
+		"Mallocs":         metric.GaugeMetricType,
+		"NextGC":          metric.GaugeMetricType,
+		"OtherSys":        metric.GaugeMetricType,
+		"PauseTotalNs":    metric.GaugeMetricType,
+		"StackInuse":      metric.GaugeMetricType,
+		"StackSys":        metric.GaugeMetricType,
+		"Sys":             metric.GaugeMetricType,
+		"TotalAlloc":      metric.GaugeMetricType,
+		"PollCount":       metric.CounterMetricType,
+		"NumForcedGC":     metric.GaugeMetricType,
+		"NumGC":           metric.GaugeMetricType,
+		"GCCPUFraction":   metric.GaugeMetricType,
+		"RandomValue":     metric.GaugeMetricType,
+		"TotalMemory":     metric.GaugeMetricType,
+		"FreeMemory":      metric.GaugeMetricType,
+		"CPUutilization1": metric.GaugeMetricType,
 	}
 
 	initialMap = make(map[string]*metric.Metrics, len(metricList))
@@ -59,10 +74,10 @@ func initMap() (initialMap map[string]*metric.Metrics, err error) {
 		switch metricType {
 		case metric.GaugeMetricType:
 			var value float64
-			initialMap[metricName], err = metric.CreateGauge(metricName, &value)
+			initialMap[metricName], err = metric.CreateGauge(metricName, value)
 		case metric.CounterMetricType:
 			var value int64
-			initialMap[metricName], err = metric.CreateCounter(metricName, &value)
+			initialMap[metricName], err = metric.CreateCounter(metricName, value)
 		}
 		if err != nil {
 			return
@@ -72,13 +87,16 @@ func initMap() (initialMap map[string]*metric.Metrics, err error) {
 	return
 }
 
-func NewMonitor() (m Monitor, err error) {
+// NewMonitor returns
+func NewMonitor(hostAddress, key string) (m Monitor, err error) {
 	initialMap, err := initMap()
 	if err != nil {
 		return
 	}
 	m = &monitor{
-		metrics: initialMap,
+		metrics:     initialMap,
+		hostAddress: hostAddress,
+		key:         key,
 	}
 	return
 }
@@ -88,12 +106,12 @@ func (m *monitor) ResetPollCount() {
 }
 
 func updateGaugeMetric(metric *metric.Metrics, value float64) (err error) {
-	_, err = metric.UpdateGauge(&value)
+	_, err = metric.UpdateGauge(value)
 	return
 }
 
 func updateCounterMetric(metric *metric.Metrics, value int64) (err error) {
-	_, err = metric.UpdateCounter(&value)
+	_, err = metric.UpdateCounter(value)
 	return
 }
 
@@ -247,7 +265,40 @@ func (m *monitor) PollMetrics() (err error) {
 	return
 }
 
-func (m *monitor) ReportMetrics(hostAddress string) (err error) {
+func (m *monitor) PollAdditionalMetrics() (err error) {
+	fmt.Println("poll additional metrics")
+	v, err := mem.VirtualMemory()
+
+	if err != nil {
+		return fmt.Errorf("failed to get memory metrics %w", err)
+	}
+
+	err = updateGaugeMetric(m.metrics["TotalMemory"], float64(v.Total))
+	if err != nil {
+		return fmt.Errorf("failed to update TotalMemory metric %w", err)
+	}
+
+	err = updateGaugeMetric(m.metrics["FreeMemory"], float64(v.Free))
+	if err != nil {
+		return fmt.Errorf("failed to update FreeMemory metric %w", err)
+	}
+
+	cpuStat, err := cpu.Times(false)
+
+	if err != nil {
+		return fmt.Errorf("failed to get cpu metrics %w", err)
+	}
+
+	err = updateGaugeMetric(m.metrics["CPUutilization1"], cpuStat[0].User)
+
+	if err != nil {
+		return fmt.Errorf("failed to update CPUutilization1 metric %w", err)
+	}
+
+	return
+}
+
+func (m *monitor) ReportMetrics() (err error) {
 	fmt.Println("reportMetrics")
 
 	if len(m.metrics) == 0 {
@@ -262,17 +313,49 @@ func (m *monitor) ReportMetrics(hostAddress string) (err error) {
 	}
 
 	client := resty.New()
+
+	client.SetPreRequestHook(func(c *resty.Client, req *http.Request) (err error) {
+
+		fmt.Println("On before request")
+		if m.key != "" {
+			hash := sha256.New()
+
+			bodyBytes, errBody := io.ReadAll(req.Body)
+
+			if errBody != nil {
+				return fmt.Errorf("failed to read request body: %w", errBody)
+			}
+
+			req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+			keyBytes := []byte(m.key)
+
+			src := append(bodyBytes, keyBytes...)
+			hash.Write(src)
+
+			dst := hash.Sum(nil)
+
+			encodedDst := base64.StdEncoding.EncodeToString(dst)
+
+			req.Header.Set("HashSHA256", encodedDst)
+
+			fmt.Println("HashSHA256 set to ", encodedDst)
+		}
+
+		return
+	})
+
 	_, err = client.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Accept-Encoding", "gzip").
 		SetBody(metricsBatch).
-		Post(fmt.Sprintf("%v/updates/", hostAddress))
+		Post(fmt.Sprintf("%v/updates/", m.hostAddress))
 
 	//TODO: properly handle connection refused error (don't quit goroutine)
 	//but quit on fatal error
 
 	if err != nil {
-		fmt.Println(err)
+		return fmt.Errorf("failed to post updates: %w", err)
 	}
-	return err
+	return
 }

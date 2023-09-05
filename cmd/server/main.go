@@ -1,3 +1,4 @@
+// Package main initializes metrics server service and starts it.
 package main
 
 import (
@@ -15,7 +16,6 @@ import (
 	"github.com/evgenytr/metrics.git/internal/logging"
 	"github.com/evgenytr/metrics.git/internal/router"
 	"github.com/evgenytr/metrics.git/internal/storage"
-
 	"github.com/go-chi/chi/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -25,12 +25,12 @@ func main() {
 	var err error
 	var db *sql.DB
 
-	host, storeInterval, fileStoragePath, restore, dbDSN := config.GetServerConfig()
+	host, storeInterval, fileStoragePath, restore, dbDSN, key := config.GetServerConfig()
 
-	fmt.Println(*host, *storeInterval, *fileStoragePath, *restore, *dbDSN)
+	fmt.Println(host, storeInterval, fileStoragePath, restore, dbDSN, key)
 
-	if *dbDSN != "" {
-		db, err = sql.Open("pgx", *dbDSN)
+	if dbDSN != "" {
+		db, err = sql.Open("pgx", dbDSN)
 
 		if err != nil {
 			log.Fatalln(err)
@@ -78,11 +78,11 @@ func main() {
 		fmt.Println(err)
 	}
 
-	if *storeInterval != 0 {
+	if storeInterval != 0 {
 		go storeMetrics(ctx, storeInterval, appStorage)
 	}
 
-	r := router.Router(sugar, storageHandler)
+	r := router.Router(sugar, storageHandler, key)
 	go listenAndServe(ctx, host, r)
 
 	for {
@@ -100,24 +100,24 @@ func main() {
 	}
 }
 
-func listenAndServe(ctx context.Context, host *string, r *chi.Mux) {
+func listenAndServe(ctx context.Context, host string, r *chi.Mux) {
 	_, cancelCtx := context.WithCancelCause(ctx)
-	err := http.ListenAndServe(*host, r)
+	err := http.ListenAndServe(host, r)
 	if err != nil {
 		fmt.Println("listenAndServe err", err)
 		cancelCtx(err)
 	}
 }
 
-func storeMetrics(ctx context.Context, storeInterval *time.Duration, storage interfaces.Storage) {
+func storeMetrics(ctx context.Context, storeInterval time.Duration, storage interfaces.Storage) {
 	_, cancelCtx := context.WithCancelCause(ctx)
 	for {
-		time.Sleep(*storeInterval)
+		time.Sleep(storeInterval)
 		err := storage.StoreMetrics(ctx)
 
 		if err != nil {
 			for _, retryInterval := range errorHandling.RepeatedAttemptsIntervals {
-				time.Sleep(*retryInterval)
+				time.Sleep(retryInterval)
 				err = storage.StoreMetrics(ctx)
 				if err == nil {
 					break

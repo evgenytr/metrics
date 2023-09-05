@@ -1,3 +1,4 @@
+// Package middleware contains custom middleware for metrics server service.
 package middleware
 
 import (
@@ -19,16 +20,20 @@ type (
 	}
 )
 
+// Write is helper method to write bytes to response.
 func (r *loggingResponseWriter) Write(b []byte) (size int, err error) {
 	size, err = r.ResponseWriter.Write(b)
 	r.responseData.size += size
 	return
 }
 
+// WriteHeader is helper method to write response header.
 func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 	r.ResponseWriter.WriteHeader(statusCode)
 	r.responseData.status = statusCode
 }
+
+// WithLogging wraps handler with logging middleware.
 func WithLogging(logger *zap.SugaredLogger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		logFn := func(res http.ResponseWriter, req *http.Request) {
@@ -41,6 +46,8 @@ func WithLogging(logger *zap.SugaredLogger) func(next http.Handler) http.Handler
 			uri := req.RequestURI
 			method := req.Method
 			encoding := req.Header["Accept-Encoding"]
+			hash := req.Header["Hashsha256"]
+
 			next.ServeHTTP(&lw, req)
 			duration := time.Since(start)
 			logger.Infoln(
@@ -50,6 +57,7 @@ func WithLogging(logger *zap.SugaredLogger) func(next http.Handler) http.Handler
 				"duration", duration,
 				"status", responseData.status,
 				"size", responseData.size,
+				"hash", hash,
 			)
 		}
 		return http.HandlerFunc(logFn)
