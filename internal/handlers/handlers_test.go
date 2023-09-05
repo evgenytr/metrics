@@ -172,9 +172,7 @@ func TestStorageHandler_ProcessGetListRequest(t *testing.T) {
 		fields fields
 		args   args
 	}{
-		{
-			name: "Get List",
-		},
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
