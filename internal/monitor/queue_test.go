@@ -14,14 +14,23 @@ func TestNewQueue(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *Queue
+		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Queue with size 10",
+			args: args{bufSize: 10},
+			want: 10,
+		},
+		{
+			name: "Queue with size 1",
+			args: args{bufSize: 0},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewQueue(tt.args.bufSize); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewQueue() = %v, want %v", got, tt.want)
+			if got := NewQueue(tt.args.bufSize); cap(got.ch) != tt.want {
+				t.Errorf("NewQueue size = %v, want %v", cap(got.ch), tt.want)
 			}
 		})
 	}
