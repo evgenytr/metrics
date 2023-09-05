@@ -10,7 +10,17 @@ import (
 	"github.com/evgenytr/metrics.git/internal/monitor"
 )
 
+var (
+	buildVersion = "N/A"
+	buildDate    = "N/A"
+	buildCommit  = "N/A"
+)
+
 func main() {
+
+	fmt.Println("Build version: ", buildVersion)
+	fmt.Println("Build date: ", buildDate)
+	fmt.Println("Build commit: ", buildCommit)
 
 	host, pollInterval, reportInterval, key, rateLimit := config.GetAgentConfig()
 

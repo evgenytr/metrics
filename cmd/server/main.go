@@ -20,7 +20,17 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
+var (
+	buildVersion = "N/A"
+	buildDate    = "N/A"
+	buildCommit  = "N/A"
+)
+
 func main() {
+
+	fmt.Println("Build version: ", buildVersion)
+	fmt.Println("Build date: ", buildDate)
+	fmt.Println("Build commit: ", buildCommit)
 
 	var err error
 	var db *sql.DB
