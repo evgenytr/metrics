@@ -1,3 +1,4 @@
+// Package utils contains helper functions.
 package utils
 
 import "time"

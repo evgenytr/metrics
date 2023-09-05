@@ -1,3 +1,4 @@
+// Package metric contains Metrics struct and methods to work with metrics.
 package metric
 
 import (

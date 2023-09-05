@@ -42,10 +42,27 @@ import (
 	"golang.org/x/tools/go/analysis/passes/unsafeptr"
 	"golang.org/x/tools/go/analysis/passes/unusedresult"
 	"golang.org/x/tools/go/analysis/passes/unusedwrite"
+	"honnef.co/go/tools/quickfix"
+	"honnef.co/go/tools/simple"
+	"honnef.co/go/tools/staticcheck"
+	"honnef.co/go/tools/stylecheck"
 )
 
 func main() {
 	allAnalyzers := make([]*analysis.Analyzer, 0)
+
+	for _, v := range staticcheck.Analyzers {
+		allAnalyzers = append(allAnalyzers, v.Analyzer)
+	}
+	for _, v := range stylecheck.Analyzers {
+		allAnalyzers = append(allAnalyzers, v.Analyzer)
+	}
+	for _, v := range simple.Analyzers {
+		allAnalyzers = append(allAnalyzers, v.Analyzer)
+	}
+	for _, v := range quickfix.Analyzers {
+		allAnalyzers = append(allAnalyzers, v.Analyzer)
+	}
 
 	allAnalyzers = append(allAnalyzers,
 		asmdecl.Analyzer,

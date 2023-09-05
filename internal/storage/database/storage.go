@@ -1,3 +1,4 @@
+// Package database is used to work with Postgres database storage.
 package database
 
 import (
