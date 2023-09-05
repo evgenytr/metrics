@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/charithe/durationcheck"
+	"github.com/sanposhiho/wastedassign"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/multichecker"
 	"golang.org/x/tools/go/analysis/passes/asmdecl"
@@ -104,6 +106,9 @@ func main() {
 		unsafeptr.Analyzer,
 		unusedresult.Analyzer,
 		unusedwrite.Analyzer,
+		//external analyzers
+		durationcheck.Analyzer,
+		wastedassign.Analyzer,
 	)
 	multichecker.Main(allAnalyzers...)
 }
