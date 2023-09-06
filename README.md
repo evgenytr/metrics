@@ -1,3 +1,4 @@
+[![codecov](https://codecov.io/gh/evgenytr/metrics/graph/badge.svg?token=KXEJEMMEB8)](https://codecov.io/gh/evgenytr/metrics) 
 # go-musthave-metrics-tpl
 
 Шаблон репозитория для трека «Сервер сбора метрик и алертинга».
