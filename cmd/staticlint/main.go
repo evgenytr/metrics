@@ -1,8 +1,6 @@
 package main
 
 import (
-	"github.com/charithe/durationcheck"
-	"github.com/sanposhiho/wastedassign"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/multichecker"
 	"golang.org/x/tools/go/analysis/passes/asmdecl"
@@ -44,10 +42,16 @@ import (
 	"golang.org/x/tools/go/analysis/passes/unsafeptr"
 	"golang.org/x/tools/go/analysis/passes/unusedresult"
 	"golang.org/x/tools/go/analysis/passes/unusedwrite"
+
 	"honnef.co/go/tools/quickfix"
 	"honnef.co/go/tools/simple"
 	"honnef.co/go/tools/staticcheck"
 	"honnef.co/go/tools/stylecheck"
+
+	"github.com/charithe/durationcheck"
+	"github.com/sanposhiho/wastedassign"
+
+	"github.com/evgenytr/metrics.git/pkg/osexitmain"
 )
 
 func main() {
@@ -115,6 +119,7 @@ func main() {
 		//external analyzers
 		durationcheck.Analyzer,
 		wastedassign.Analyzer,
+		osexitmain.Analyzer,
 	)
 	multichecker.Main(allAnalyzers...)
 }
