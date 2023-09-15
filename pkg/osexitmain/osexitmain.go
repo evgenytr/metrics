@@ -2,12 +2,10 @@
 package osexitmain
 
 import (
-	"fmt"
 	"go/ast"
 	"go/types"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
-	"golang.org/x/tools/go/ast/inspector"
 	"regexp"
 )
 
@@ -25,37 +23,35 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		return nil, nil
 	}
 
-	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
-
-	nodeTypes := []ast.Node{
-		(*ast.File)(nil),
-		(*ast.FuncDecl)(nil),
-		(*ast.SelectorExpr)(nil),
-	}
-
-	inspect.Preorder(nodeTypes, func(node ast.Node) {
-		switch x := node.(type) {
-		case *ast.File:
-			//skip generated files
-			for _, cg := range x.Comments {
-				for _, comment := range cg.List {
-					if generatedCodeRegexp.MatchString(comment.Text) {
-						fmt.Println(comment.Text)
-						return
-					}
+	for _, file := range pass.Files {
+		//skip generated files
+		skipFile := false
+		for _, cg := range file.Comments {
+			for _, comment := range cg.List {
+				if generatedCodeRegexp.MatchString(comment.Text) {
+					skipFile = true
 				}
 			}
-		case *ast.FuncDecl:
-			if !isMainFunc(x) {
-				return
-			}
-		case *ast.SelectorExpr:
-			if isOsExitCall(x) {
-				pass.Reportf(x.Pos(), "os.Exit direct call detected in main function of main package")
-				return
-			}
 		}
-	})
+
+		if skipFile {
+			continue
+		}
+
+		ast.Inspect(file, func(node ast.Node) bool {
+			switch x := node.(type) {
+			case *ast.FuncDecl:
+				if !isMainFunc(x) {
+					return false
+				}
+			case *ast.SelectorExpr:
+				if isOsExitCall(x) {
+					pass.Reportf(x.Pos(), "os.Exit direct call detected in main function of main package")
+				}
+			}
+			return true
+		})
+	}
 
 	return nil, nil
 }
