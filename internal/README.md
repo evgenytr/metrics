@@ -1,3 +1,7 @@
 # internal
 
-В данной директории и её поддиректориях будет содержаться имплементация вашего сервиса
+To update mocks please run 
+```
+go generate ./...
+```
+in the root of project

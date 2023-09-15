@@ -1,5 +1,4 @@
-// Package interfaces contains interfaces used across the services
-package interfaces
+package mockgen
 
 import (
 	"context"
@@ -7,8 +6,8 @@ import (
 	"github.com/evgenytr/metrics.git/internal/metric"
 )
 
-// Storage interface should be implemented by any used storage
-type Storage interface {
+//go:generate mockgen -destination=../storage/mocks/storage_mock.gen.go -package=mocks . StorageGen
+type StorageGen interface {
 	InitializeMetrics(ctx context.Context, restore bool) error
 	StoreMetrics(ctx context.Context) error
 	UpdateGauge(ctx context.Context, name string, value float64) (float64, error)

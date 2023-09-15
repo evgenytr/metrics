@@ -51,7 +51,13 @@ import (
 )
 
 func main() {
-	allAnalyzers := make([]*analysis.Analyzer, 0)
+
+	externalAnalyzersAmount := 3
+	analysisAnalyzersAmount := 39
+	totalAnalyzersAmount := len(staticcheck.Analyzers) + len(stylecheck.Analyzers) + len(simple.Analyzers) +
+		len(quickfix.Analyzers) + analysisAnalyzersAmount + externalAnalyzersAmount
+
+	allAnalyzers := make([]*analysis.Analyzer, 0, totalAnalyzersAmount)
 
 	for _, v := range staticcheck.Analyzers {
 		allAnalyzers = append(allAnalyzers, v.Analyzer)
