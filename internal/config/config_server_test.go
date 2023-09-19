@@ -15,6 +15,7 @@ func TestGetServerConfig(t *testing.T) {
 		wantRestore          bool
 		wantDBDSN            string
 		wantKey              string
+		wantCryptoKey        string
 	}{
 		{
 			name:                 "Defaults",
@@ -24,11 +25,12 @@ func TestGetServerConfig(t *testing.T) {
 			wantRestore:          true,
 			wantDBDSN:            "",
 			wantKey:              "",
+			wantCryptoKey:        "",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotHost, gotStoreIntervalOut, gotFileStoragePath, gotRestore, gotDBDSN, gotKey := GetServerConfig()
+			gotHost, gotStoreIntervalOut, gotFileStoragePath, gotRestore, gotDBDSN, gotKey, gotCryptoKey := GetServerConfig()
 			if !reflect.DeepEqual(gotHost, tt.wantHost) {
 				t.Errorf("GetServerConfig() gotHost = %v, want %v", gotHost, tt.wantHost)
 			}
@@ -46,6 +48,9 @@ func TestGetServerConfig(t *testing.T) {
 			}
 			if !reflect.DeepEqual(gotKey, tt.wantKey) {
 				t.Errorf("GetServerConfig() gotKey = %v, want %v", gotKey, tt.wantKey)
+			}
+			if !reflect.DeepEqual(gotCryptoKey, tt.wantCryptoKey) {
+				t.Errorf("GetAgentConfig() gotCryptoKey = %v, want %v", gotCryptoKey, tt.wantCryptoKey)
 			}
 		})
 	}

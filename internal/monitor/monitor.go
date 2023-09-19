@@ -22,6 +22,7 @@ type monitor struct {
 	metrics     map[string]*metric.Metrics
 	hostAddress string
 	key         string
+	cryptoKey   string
 }
 
 // Monitor interface describes .
@@ -88,7 +89,7 @@ func initMap() (initialMap map[string]*metric.Metrics, err error) {
 }
 
 // NewMonitor returns
-func NewMonitor(hostAddress, key string) (m Monitor, err error) {
+func NewMonitor(hostAddress, key, cryptoKey string) (m Monitor, err error) {
 	initialMap, err := initMap()
 	if err != nil {
 		return
@@ -97,6 +98,7 @@ func NewMonitor(hostAddress, key string) (m Monitor, err error) {
 		metrics:     initialMap,
 		hostAddress: hostAddress,
 		key:         key,
+		cryptoKey:   cryptoKey,
 	}
 	return
 }
@@ -345,6 +347,7 @@ func (m *monitor) ReportMetrics() (err error) {
 		return
 	})
 
+	//TODO: add encryption if cryptoKey exists
 	_, err = client.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Accept-Encoding", "gzip").

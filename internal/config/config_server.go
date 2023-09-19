@@ -18,15 +18,16 @@ type serverConfig struct {
 	Key             string  `env:"KEY"`
 	StoreInterval   float64 `env:"STORE_INTERVAL"`
 	Restore         bool    `env:"RESTORE"`
+	CryptoKey       string  `env:"CRYPTO_KEY"`
 }
 
 // GetServerConfig returns server config params
-func GetServerConfig() (host string, storeIntervalOut time.Duration, fileStoragePath string, restore bool, dbDSN, key string) {
+func GetServerConfig() (host string, storeIntervalOut time.Duration, fileStoragePath string, restore bool, dbDSN, key, cryptoKey string) {
 
 	var storeIntervalIn float64
 	var cfg serverConfig
 
-	host, storeIntervalIn, fileStoragePath, restore, dbDSN, key = getServerFlags()
+	host, storeIntervalIn, fileStoragePath, restore, dbDSN, key, cryptoKey = getServerFlags()
 
 	_ = env.Parse(&cfg)
 
@@ -59,12 +60,16 @@ func GetServerConfig() (host string, storeIntervalOut time.Duration, fileStorage
 		restore = cfg.Restore
 	}
 
+	if cfg.CryptoKey != "" {
+		cryptoKey = cfg.CryptoKey
+	}
+
 	storeIntervalOut = utils.GetTimeInterval(storeIntervalIn)
 
 	return
 }
 
-func getServerFlags() (host string, storeInterval float64, fileStoragePath string, restore bool, dbDSN, key string) {
+func getServerFlags() (host string, storeInterval float64, fileStoragePath string, restore bool, dbDSN, key, cryptoKey string) {
 	host = "localhost:8080"
 	restore = true
 	if flag.Lookup("a") == nil {
@@ -85,6 +90,8 @@ func getServerFlags() (host string, storeInterval float64, fileStoragePath strin
 	if flag.Lookup("k") == nil {
 		key = *flag.String("k", "", "hash key")
 	}
-
+	if flag.Lookup("crypto-key") == nil {
+		cryptoKey = *flag.String("crypto-key", "", "crypto key path")
+	}
 	return
 }

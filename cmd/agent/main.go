@@ -22,12 +22,12 @@ func main() {
 	fmt.Println("Build date: ", buildDate)
 	fmt.Println("Build commit: ", buildCommit)
 
-	host, pollInterval, reportInterval, key, rateLimit := config.GetAgentConfig()
+	host, pollInterval, reportInterval, key, rateLimit, cryptoKey := config.GetAgentConfig()
 
-	fmt.Println(host, pollInterval, reportInterval, key, rateLimit)
+	fmt.Println(host, pollInterval, reportInterval, key, rateLimit, cryptoKey)
 	hostAddress := fmt.Sprintf("http://%v", host)
 
-	currMetrics, err := monitor.NewMonitor(hostAddress, key)
+	currMetrics, err := monitor.NewMonitor(hostAddress, key, cryptoKey)
 	if err != nil {
 		log.Fatalln(err)
 	}

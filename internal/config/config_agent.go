@@ -16,15 +16,16 @@ type agentConfig struct {
 	ReportInterval float64 `env:"REPORT_INTERVAL"`
 	PollInterval   float64 `env:"POLL_INTERVAL"`
 	RateLimit      int64   `env:"RATE_LIMIT"`
+	CryptoKey      string  `env:"CRYPTO_KEY"`
 }
 
 // GetAgentConfig returns agent config params
-func GetAgentConfig() (host string, pollIntervalOut, reportIntervalOut time.Duration, key string, rateLimit int64) {
+func GetAgentConfig() (host string, pollIntervalOut, reportIntervalOut time.Duration, key string, rateLimit int64, cryptoKey string) {
 
 	var cfg agentConfig
 	var pollIntervalIn, reportIntervalIn float64
 
-	host, pollIntervalIn, reportIntervalIn, key, rateLimit = getAgentFlags()
+	host, pollIntervalIn, reportIntervalIn, key, rateLimit, cryptoKey = getAgentFlags()
 	_ = env.Parse(&cfg)
 	flag.Parse()
 
@@ -47,6 +48,9 @@ func GetAgentConfig() (host string, pollIntervalOut, reportIntervalOut time.Dura
 	if cfg.RateLimit != 0 {
 		rateLimit = cfg.RateLimit
 	}
+	if cfg.CryptoKey != "" {
+		cryptoKey = cfg.CryptoKey
+	}
 
 	pollIntervalOut = utils.GetTimeInterval(pollIntervalIn)
 	reportIntervalOut = utils.GetTimeInterval(reportIntervalIn)
@@ -54,7 +58,7 @@ func GetAgentConfig() (host string, pollIntervalOut, reportIntervalOut time.Dura
 	return
 }
 
-func getAgentFlags() (host string, pollInterval, reportInterval float64, key string, rateLimit int64) {
+func getAgentFlags() (host string, pollInterval, reportInterval float64, key string, rateLimit int64, cryptoKey string) {
 	if flag.Lookup("a") == nil {
 		host = *flag.String("a", "localhost:8080", "host address")
 	}
@@ -70,6 +74,8 @@ func getAgentFlags() (host string, pollInterval, reportInterval float64, key str
 	if flag.Lookup("l") == nil {
 		rateLimit = *flag.Int64("l", 2, "metrics report rate limit")
 	}
-
+	if flag.Lookup("crypto-key") == nil {
+		cryptoKey = *flag.String("crypto-key", "", "crypto key path")
+	}
 	return
 }

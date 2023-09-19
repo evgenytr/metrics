@@ -35,9 +35,9 @@ func main() {
 	var err error
 	var db *sql.DB
 
-	host, storeInterval, fileStoragePath, restore, dbDSN, key := config.GetServerConfig()
+	host, storeInterval, fileStoragePath, restore, dbDSN, key, cryptoKey := config.GetServerConfig()
 
-	fmt.Println(host, storeInterval, fileStoragePath, restore, dbDSN, key)
+	fmt.Println(host, storeInterval, fileStoragePath, restore, dbDSN, key, cryptoKey)
 
 	if dbDSN != "" {
 		db, err = sql.Open("pgx", dbDSN)
@@ -92,7 +92,7 @@ func main() {
 		go storeMetrics(ctx, storeInterval, appStorage)
 	}
 
-	r := router.Router(sugar, storageHandler, key)
+	r := router.Router(sugar, storageHandler, key, cryptoKey)
 	go listenAndServe(ctx, host, r)
 
 	for {

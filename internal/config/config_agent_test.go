@@ -14,6 +14,7 @@ func TestGetAgentConfig(t *testing.T) {
 		wantReportIntervalOut time.Duration
 		wantKey               string
 		wantRateLimit         int64
+		wantCryptoKey         string
 	}{
 		{
 			name:                  "Defaults",
@@ -22,11 +23,12 @@ func TestGetAgentConfig(t *testing.T) {
 			wantReportIntervalOut: 10 * time.Second,
 			wantKey:               "",
 			wantRateLimit:         2,
+			wantCryptoKey:         "",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotHost, gotPollIntervalOut, gotReportIntervalOut, gotKey, gotRateLimit := GetAgentConfig()
+			gotHost, gotPollIntervalOut, gotReportIntervalOut, gotKey, gotRateLimit, gotCryptoKey := GetAgentConfig()
 			if !reflect.DeepEqual(gotHost, tt.wantHost) {
 				t.Errorf("GetAgentConfig() gotHost = %v, want %v", gotHost, tt.wantHost)
 			}
@@ -41,6 +43,9 @@ func TestGetAgentConfig(t *testing.T) {
 			}
 			if !reflect.DeepEqual(gotRateLimit, tt.wantRateLimit) {
 				t.Errorf("GetAgentConfig() gotRateLimit = %v, want %v", gotRateLimit, tt.wantRateLimit)
+			}
+			if !reflect.DeepEqual(gotCryptoKey, tt.wantCryptoKey) {
+				t.Errorf("GetAgentConfig() gotCryptoKey = %v, want %v", gotCryptoKey, tt.wantCryptoKey)
 			}
 		})
 	}
