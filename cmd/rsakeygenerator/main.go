@@ -23,16 +23,24 @@ func main() {
 	publicKey := &privateKey.PublicKey
 
 	var privateKeyPEM bytes.Buffer
-	pem.Encode(&privateKeyPEM, &pem.Block{
+	err = pem.Encode(&privateKeyPEM, &pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
 	})
 
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	var publicKeyPEM bytes.Buffer
-	pem.Encode(&publicKeyPEM, &pem.Block{
+	err = pem.Encode(&publicKeyPEM, &pem.Block{
 		Type:  "RSA PUBLIC KEY",
 		Bytes: x509.MarshalPKCS1PublicKey(publicKey),
 	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	err = os.WriteFile(privateKeyFileStoragePath, privateKeyPEM.Bytes(), 0666)
 	if err != nil {

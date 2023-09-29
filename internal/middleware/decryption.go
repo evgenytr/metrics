@@ -6,28 +6,9 @@ import (
 	cryptoRand "crypto/rand"
 	"crypto/rsa"
 	"fmt"
-	"hash"
 	"io"
 	"net/http"
 )
-
-type (
-	decryptionResponseData struct {
-		h hash.Hash
-	}
-
-	decryptionResponseWriter struct {
-		http.ResponseWriter
-		responseData *decryptionResponseData
-	}
-)
-
-// Write is helper method to write bytes to response.
-func (r *decryptionResponseWriter) Write(b []byte) (size int, err error) {
-	r.responseData.h.Write(b)
-	size, err = r.ResponseWriter.Write(b)
-	return
-}
 
 // WithDecryption wraps handler with middleware to decrypt body.
 func WithDecryption(cryptoKey *rsa.PrivateKey) func(next http.Handler) http.Handler {

@@ -1,5 +1,10 @@
 # cmd/agent
 
+To run with external config JSON file please use the following:
+```
+go run main.go -config="./configs/agent_config.json" 
+```
+
 To run with link flags please use the following commands:
 
 *for zsh*

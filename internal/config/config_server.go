@@ -2,7 +2,9 @@
 package config
 
 import (
+	"encoding/json"
 	"flag"
+	"fmt"
 	"os"
 	"time"
 
@@ -29,7 +31,6 @@ func GetServerConfig() (host string, storeIntervalOut time.Duration, fileStorage
 	var cfg serverConfig
 
 	_ = env.Parse(&cfg)
-	flag.Parse()
 
 	host, storeIntervalIn, fileStoragePath, restore, dbDSN, key, cryptoKey = getServerFlags(cfg.ConfigFile)
 
@@ -70,9 +71,37 @@ func GetServerConfig() (host string, storeIntervalOut time.Duration, fileStorage
 }
 
 func getServerFlags(configFile string) (host string, storeInterval float64, fileStoragePath string, restore bool, dbDSN, key, cryptoKey string) {
-	host = "localhost:8080"
-	restore = true
 
+	if flag.Lookup("config") == nil && configFile == "" {
+		fmt.Println("setting config file from flag")
+		flag.StringVar(&configFile, "config", "", "config JSON file path")
+	}
+
+	if flag.Lookup("a") == nil {
+		flag.StringVar(&host, "a", "", "host address")
+	}
+	if flag.Lookup("i") == nil {
+		flag.Float64Var(&storeInterval, "i", -1, "file store interval")
+	}
+	if flag.Lookup("f") == nil {
+		flag.StringVar(&fileStoragePath, "f", "", "file storage path")
+	}
+	if flag.Lookup("d") == nil {
+		flag.StringVar(&dbDSN, "d", "", "database address")
+	}
+	if flag.Lookup("r") == nil {
+		flag.BoolVar(&restore, "r", false, "restore saved metrics on server start")
+	}
+	if flag.Lookup("k") == nil {
+		flag.StringVar(&key, "k", "", "hash key")
+	}
+	if flag.Lookup("crypto-key") == nil {
+		flag.StringVar(&cryptoKey, "crypto-key", "", "crypto key path")
+	}
+
+	flag.Parse()
+
+	//sensible defaults to run in absence of flags and env vars
 	configDefaults := &serverConfig{
 		Host:            "localhost:8080",
 		StoreInterval:   300,
@@ -80,32 +109,52 @@ func getServerFlags(configFile string) (host string, storeInterval float64, file
 		Restore:         true,
 		CryptoKey:       "./rsakeys/private.pem",
 	}
-	if flag.Lookup("config") == nil && configFile == "" {
-		configFile = *flag.String("config", "", "config JSON file path")
+
+	fmt.Println("config file ", configFile)
+
+	if configFile != "" {
+		fmt.Println("reading config file")
+		dat, err := os.ReadFile(configFile)
+		if err != nil {
+			fmt.Println("failed to read config file %w", err)
+		}
+		fmt.Println(dat)
+		err = json.Unmarshal(dat, configDefaults)
+		if err != nil {
+			fmt.Println("failed to unmarshal config file %w", err)
+		}
+		fmt.Println(configDefaults)
+
 	}
 
-	//TODO: if config file exists, set defaults based on it
+	//set defaults for values that were not set from flags
+	if host == "" {
+		host = configDefaults.Host
+	}
 
-	if flag.Lookup("a") == nil {
-		host = *flag.String("a", configDefaults.Host, "host address")
+	if key == "" {
+		key = configDefaults.Key
 	}
-	if flag.Lookup("i") == nil {
-		storeInterval = *flag.Float64("i", configDefaults.StoreInterval, "file store interval")
+
+	if cryptoKey == "" {
+		cryptoKey = configDefaults.CryptoKey
 	}
-	if flag.Lookup("f") == nil {
-		fileStoragePath = *flag.String("f", configDefaults.FileStoragePath, "file storage path")
+
+	if storeInterval == -1 {
+		storeInterval = configDefaults.StoreInterval
 	}
-	if flag.Lookup("d") == nil {
-		dbDSN = *flag.String("d", "", "database address")
+
+	if !restore {
+		restore = configDefaults.Restore
 	}
-	if flag.Lookup("r") == nil {
-		restore = *flag.Bool("r", configDefaults.Restore, "restore saved metrics on server start")
+
+	if dbDSN == "" {
+		dbDSN = configDefaults.DatabaseDSN
 	}
-	if flag.Lookup("k") == nil {
-		key = *flag.String("k", "", "hash key")
+
+	if fileStoragePath == "" {
+		fileStoragePath = configDefaults.FileStoragePath
 	}
-	if flag.Lookup("crypto-key") == nil {
-		cryptoKey = *flag.String("crypto-key", configDefaults.CryptoKey, "crypto key path")
-	}
+
 	return
 }

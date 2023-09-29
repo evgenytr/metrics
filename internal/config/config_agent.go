@@ -2,7 +2,10 @@
 package config
 
 import (
+	"encoding/json"
 	"flag"
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/evgenytr/metrics.git/internal/utils"
@@ -27,7 +30,8 @@ func GetAgentConfig() (host string, pollIntervalOut, reportIntervalOut time.Dura
 	var pollIntervalIn, reportIntervalIn float64
 
 	_ = env.Parse(&cfg)
-	flag.Parse()
+
+	fmt.Println(cfg)
 
 	host, pollIntervalIn, reportIntervalIn, key, rateLimit, cryptoKeyFile = getAgentFlags(cfg.ConfigFile)
 
@@ -63,36 +67,81 @@ func GetAgentConfig() (host string, pollIntervalOut, reportIntervalOut time.Dura
 
 func getAgentFlags(configFile string) (host string, pollInterval, reportInterval float64, key string, rateLimit int64, cryptoKeyFile string) {
 
+	if flag.Lookup("config") == nil && configFile == "" {
+		fmt.Println("setting config file from flag")
+		flag.StringVar(&configFile, "config", "", "config JSON file path")
+	}
+
+	if flag.Lookup("a") == nil {
+		flag.StringVar(&host, "a", "", "host address")
+	}
+	if flag.Lookup("p") == nil {
+		flag.Float64Var(&pollInterval, "p", -1, "metrics polling interval")
+	}
+	if flag.Lookup("r") == nil {
+		flag.Float64Var(&reportInterval, "r", -1, "metrics reporting interval")
+	}
+	if flag.Lookup("k") == nil {
+		flag.StringVar(&key, "k", "", "hash key")
+	}
+	if flag.Lookup("l") == nil {
+		flag.Int64Var(&rateLimit, "l", -1, "metrics report rate limit")
+	}
+	if flag.Lookup("crypto-key") == nil {
+		flag.StringVar(&cryptoKeyFile, "crypto-key", "", "crypto key file path")
+	}
+
+	flag.Parse()
+
+	//sensible defaults to run in absence of flags and env vars
 	configDefaults := &agentConfig{
 		Host:           "localhost:8080",
-		PollInterval:   2,
+		PollInterval:   1,
 		ReportInterval: 10,
 		RateLimit:      2,
 		CryptoKey:      "./rsakeys/public.pub",
 	}
-	if flag.Lookup("config") == nil && configFile == "" {
-		configFile = *flag.String("config", "", "config JSON file path")
+
+	fmt.Println("config file ", configFile)
+
+	if configFile != "" {
+		fmt.Println("reading config file")
+		dat, err := os.ReadFile(configFile)
+		if err != nil {
+			fmt.Println("failed to read config file %w", err)
+		}
+		fmt.Println(dat)
+		err = json.Unmarshal(dat, configDefaults)
+		if err != nil {
+			fmt.Println("failed to unmarshal config file %w", err)
+		}
+		fmt.Println(configDefaults)
+
 	}
 
-	//TODO: if config file exists, set defaults based on it
+	//set defaults for values that were not set from flags
+	if host == "" {
+		host = configDefaults.Host
+	}
 
-	if flag.Lookup("a") == nil {
-		host = *flag.String("a", configDefaults.Host, "host address")
+	if key == "" {
+		key = configDefaults.Key
 	}
-	if flag.Lookup("p") == nil {
-		pollInterval = *flag.Float64("p", configDefaults.PollInterval, "metrics polling interval")
+
+	if cryptoKeyFile == "" {
+		cryptoKeyFile = configDefaults.CryptoKey
 	}
-	if flag.Lookup("r") == nil {
-		reportInterval = *flag.Float64("r", configDefaults.ReportInterval, "metrics reporting interval")
+
+	if rateLimit == -1 {
+		rateLimit = configDefaults.RateLimit
 	}
-	if flag.Lookup("k") == nil {
-		key = *flag.String("k", configDefaults.Key, "hash key")
+
+	if pollInterval == -1 {
+		pollInterval = configDefaults.PollInterval
 	}
-	if flag.Lookup("l") == nil {
-		rateLimit = *flag.Int64("l", configDefaults.RateLimit, "metrics report rate limit")
-	}
-	if flag.Lookup("crypto-key") == nil {
-		cryptoKeyFile = *flag.String("crypto-key", configDefaults.CryptoKey, "crypto key file path")
+
+	if reportInterval == -1 {
+		reportInterval = configDefaults.ReportInterval
 	}
 
 	return
