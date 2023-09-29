@@ -53,13 +53,20 @@ func (q *Queue) close() {
 }
 
 // ScheduleTasks fills the Queue with tasks.
-func (q *Queue) ScheduleTasks(interval time.Duration) {
+func (q *Queue) ScheduleTasks(ctx context.Context, interval time.Duration) {
 	taskID := 0
 	defer q.close()
 	for {
-		time.Sleep(interval)
-		q.push(&Task{id: taskID})
-		taskID++
+		select {
+		case <-ctx.Done():
+			fmt.Println("queue stopped scheduling new tasks")
+			return
+		default:
+			time.Sleep(interval)
+			q.push(&Task{id: taskID})
+			taskID++
+		}
+
 	}
 }
 
@@ -89,7 +96,9 @@ func (w *Worker) Loop(ctx context.Context, cancelCtx context.CancelCauseFunc, fn
 			for _, retryInterval := range errorHandling.RepeatedAttemptsIntervals {
 				fmt.Printf("worker %d retrying in %s %s\n", w.id, retryInterval, err)
 				time.Sleep(retryInterval)
+
 				err = fn()
+
 				if err == nil {
 					break
 				}
@@ -100,6 +109,7 @@ func (w *Worker) Loop(ctx context.Context, cancelCtx context.CancelCauseFunc, fn
 			fmt.Println("worker %w err %w", w.id, err)
 			err = fmt.Errorf("worker %d failed: %w", w.id, err)
 			cancelCtx(err)
+
 			return
 		}
 

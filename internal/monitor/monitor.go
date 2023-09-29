@@ -21,6 +21,7 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"sync"
 )
 
 type monitor struct {
@@ -28,6 +29,7 @@ type monitor struct {
 	hostAddress string
 	key         string
 	cryptoKey   string
+	wg          *sync.WaitGroup
 }
 
 // Monitor interface describes .
@@ -94,7 +96,7 @@ func initMap() (initialMap map[string]*metric.Metrics, err error) {
 }
 
 // NewMonitor returns
-func NewMonitor(hostAddress, key, cryptoKey string) (m Monitor, err error) {
+func NewMonitor(hostAddress, key, cryptoKey string, wg *sync.WaitGroup) (m Monitor, err error) {
 	initialMap, err := initMap()
 	if err != nil {
 		return
@@ -104,6 +106,7 @@ func NewMonitor(hostAddress, key, cryptoKey string) (m Monitor, err error) {
 		hostAddress: hostAddress,
 		key:         key,
 		cryptoKey:   cryptoKey,
+		wg:          wg,
 	}
 	return
 }
@@ -123,7 +126,7 @@ func updateCounterMetric(metric *metric.Metrics, value int64) (err error) {
 }
 
 func (m *monitor) PollMetrics() (err error) {
-	fmt.Println("pollMetrics")
+	//	fmt.Println("pollMetrics")
 	var rtm runtime.MemStats
 	runtime.ReadMemStats(&rtm)
 
@@ -273,7 +276,7 @@ func (m *monitor) PollMetrics() (err error) {
 }
 
 func (m *monitor) PollAdditionalMetrics() (err error) {
-	fmt.Println("poll additional metrics")
+	//	fmt.Println("poll additional metrics")
 	v, err := mem.VirtualMemory()
 
 	if err != nil {
@@ -307,6 +310,8 @@ func (m *monitor) PollAdditionalMetrics() (err error) {
 
 func (m *monitor) ReportMetrics() (err error) {
 	fmt.Println("reportMetrics")
+	m.wg.Add(1)
+	defer m.wg.Done()
 
 	if len(m.metrics) == 0 {
 		fmt.Println("empty batch")
@@ -357,8 +362,6 @@ func (m *monitor) ReportMetrics() (err error) {
 
 			encryptedBytes = append(encryptedBytes, encryptedBlockBytes...)
 		}
-
-		fmt.Println("encrypted ", encryptedBytes)
 
 		metricsBytes = encryptedBytes
 	}
