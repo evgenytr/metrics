@@ -4,7 +4,6 @@ import (
 	"context"
 	"reflect"
 	"testing"
-	"time"
 )
 
 func TestNewQueue(t *testing.T) {
@@ -53,30 +52,6 @@ func TestNewWorker(t *testing.T) {
 			if got := NewWorker(tt.args.id, tt.args.queue); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewWorker() = %v, want %v", got, tt.want)
 			}
-		})
-	}
-}
-
-func TestQueue_ScheduleTasks(t *testing.T) {
-	type fields struct {
-		ch chan *Task
-	}
-	type args struct {
-		interval time.Duration
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			q := &Queue{
-				ch: tt.fields.ch,
-			}
-			q.ScheduleTasks(tt.args.interval)
 		})
 	}
 }
