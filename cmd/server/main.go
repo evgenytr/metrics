@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/evgenytr/metrics.git/internal/config"
@@ -101,8 +104,11 @@ func main() {
 
 	go listenAndServe(ctx, host, r)
 
-	for {
-		<-ctx.Done()
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+
+	select {
+	case <-ctx.Done():
 		err := context.Cause(ctx)
 		if err != nil {
 			log.Fatalln(err)
@@ -112,7 +118,13 @@ func main() {
 		if err != nil {
 			log.Print(err)
 		}
-
+	case <-sigChan:
+		fmt.Println("shutdown signal")
+		err = appStorage.StoreMetrics(ctx)
+		if err != nil {
+			log.Print(err)
+		}
+		fmt.Println("metrics stored before shutting down")
 	}
 }
 

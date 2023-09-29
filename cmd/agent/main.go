@@ -4,13 +4,14 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/evgenytr/metrics.git/internal/config"
-	"github.com/evgenytr/metrics.git/internal/monitor"
 	"log"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
+
+	"github.com/evgenytr/metrics.git/internal/config"
+	"github.com/evgenytr/metrics.git/internal/monitor"
 )
 
 var (
@@ -74,32 +75,30 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 
-	for {
-		select {
-		case <-workerCtx.Done():
-			err := context.Cause(workerCtx)
-			if err != nil {
-				log.Fatalln(err)
-			}
-
-		case <-sigChan:
-			fmt.Println("shutdown signal")
-			err = fmt.Errorf("shutdown signal received")
-			stopQueueCtx(err)
-			cancelWorkerCtx(err)
-
-			wg.Wait()
-			fmt.Println("after wait group done")
-
-			fmt.Println("report collected metrics before shutdown")
-			//report collected metrics before shutting down
-			err = currMetrics.ReportMetrics()
-			if err != nil {
-				log.Fatalln(err)
-			}
-			fmt.Println("metrics sent")
-
+	select {
+	case <-workerCtx.Done():
+		err := context.Cause(workerCtx)
+		if err != nil {
+			log.Fatalln(err)
 		}
+
+	case <-sigChan:
+		fmt.Println("shutdown signal")
+		err = fmt.Errorf("shutdown signal received")
+		stopQueueCtx(err)
+		cancelWorkerCtx(err)
+
+		wg.Wait()
+		fmt.Println("after wait group done")
+
+		fmt.Println("report collected metrics before shutdown")
+		//report collected metrics before shutting down
+		err = currMetrics.ReportMetrics()
+		if err != nil {
+			log.Fatalln(err)
+		}
+		fmt.Println("metrics sent")
+
 	}
 
 }
