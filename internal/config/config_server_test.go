@@ -25,7 +25,7 @@ func TestGetServerConfig(t *testing.T) {
 			wantRestore:          true,
 			wantDBDSN:            "",
 			wantKey:              "",
-			wantCryptoKey:        "",
+			wantCryptoKey:        "./rsakeys/private.pem",
 		},
 	}
 	for _, tt := range tests {

@@ -19,11 +19,11 @@ func TestGetAgentConfig(t *testing.T) {
 		{
 			name:                  "Defaults",
 			wantHost:              "localhost:8080",
-			wantPollIntervalOut:   2 * time.Second,
+			wantPollIntervalOut:   1 * time.Second,
 			wantReportIntervalOut: 10 * time.Second,
 			wantKey:               "",
 			wantRateLimit:         2,
-			wantCryptoKey:         "",
+			wantCryptoKey:         "./rsakeys/public.pub",
 		},
 	}
 	for _, tt := range tests {
