@@ -97,7 +97,7 @@ func getAgentFlags(configFile string) (host string, pollInterval, reportInterval
 	configDefaults := &agentConfig{
 		Host:           "localhost:8080",
 		PollInterval:   1,
-		ReportInterval: 30,
+		ReportInterval: 10,
 		RateLimit:      2,
 		CryptoKey:      "./rsakeys/public.pub",
 	}

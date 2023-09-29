@@ -126,7 +126,7 @@ func updateCounterMetric(metric *metric.Metrics, value int64) (err error) {
 }
 
 func (m *monitor) PollMetrics() (err error) {
-	//	fmt.Println("pollMetrics")
+	fmt.Println("pollMetrics")
 	var rtm runtime.MemStats
 	runtime.ReadMemStats(&rtm)
 
@@ -276,7 +276,7 @@ func (m *monitor) PollMetrics() (err error) {
 }
 
 func (m *monitor) PollAdditionalMetrics() (err error) {
-	//	fmt.Println("poll additional metrics")
+	fmt.Println("poll additional metrics")
 	v, err := mem.VirtualMemory()
 
 	if err != nil {
@@ -310,6 +310,7 @@ func (m *monitor) PollAdditionalMetrics() (err error) {
 
 func (m *monitor) ReportMetrics() (err error) {
 	fmt.Println("reportMetrics")
+
 	m.wg.Add(1)
 	defer m.wg.Done()
 

@@ -87,10 +87,17 @@ func main() {
 			err = fmt.Errorf("shutdown signal received")
 			stopQueueCtx(err)
 			cancelWorkerCtx(err)
-			
-			wg.Wait()
 
+			wg.Wait()
 			fmt.Println("after wait group done")
+
+			fmt.Println("report collected metrics before shutdown")
+			//report collected metrics before shutting down
+			err = currMetrics.ReportMetrics()
+			if err != nil {
+				log.Fatalln(err)
+			}
+			fmt.Println("metrics sent")
 
 		}
 	}
