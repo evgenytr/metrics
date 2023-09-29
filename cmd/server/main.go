@@ -16,6 +16,7 @@ import (
 	"github.com/evgenytr/metrics.git/internal/logging"
 	"github.com/evgenytr/metrics.git/internal/router"
 	"github.com/evgenytr/metrics.git/internal/storage"
+
 	"github.com/go-chi/chi/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -92,7 +93,12 @@ func main() {
 		go storeMetrics(ctx, storeInterval, appStorage)
 	}
 
-	r := router.Router(sugar, storageHandler, key, cryptoKey)
+	r, err := router.Router(sugar, storageHandler, key, cryptoKey)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	go listenAndServe(ctx, host, r)
 
 	for {

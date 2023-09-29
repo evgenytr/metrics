@@ -2,7 +2,10 @@
 package router
 
 import (
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
@@ -15,8 +18,8 @@ import (
 const CompressionLevel = 5
 
 // Router method creates new Router.
-func Router(sugar *zap.SugaredLogger, h *handlers.StorageHandler, key, cryptoKey string) *chi.Mux {
-	r := chi.NewRouter()
+func Router(sugar *zap.SugaredLogger, h *handlers.StorageHandler, key, cryptoKey string) (r *chi.Mux, err error) {
+	r = chi.NewRouter()
 
 	if key != "" {
 		fmt.Println("middleware with signature check used")
@@ -25,8 +28,20 @@ func Router(sugar *zap.SugaredLogger, h *handlers.StorageHandler, key, cryptoKey
 	}
 
 	if cryptoKey != "" {
-		fmt.Println("middleware with decryption is used for /updates/")
-		withDecryption := middleware.WithDecryption(cryptoKey)
+		dat, err := os.ReadFile(cryptoKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read private key from file: %w", err)
+		}
+
+		block, _ := pem.Decode(dat)
+
+		privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse private key: %w", err)
+		}
+
+		fmt.Println("middleware with decryption is used")
+		withDecryption := middleware.WithDecryption(privateKey)
 		r.Use(withDecryption)
 	}
 
@@ -49,5 +64,5 @@ func Router(sugar *zap.SugaredLogger, h *handlers.StorageHandler, key, cryptoKey
 
 	r.Get("/", h.ProcessGetListRequest)
 
-	return r
+	return
 }

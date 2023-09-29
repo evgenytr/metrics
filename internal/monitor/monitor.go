@@ -3,19 +3,24 @@ package monitor
 
 import (
 	"bytes"
+	cryptoRand "crypto/rand"
+	"crypto/rsa"
 	"crypto/sha256"
+	"crypto/x509"
 	"encoding/base64"
+	"encoding/json"
+	"encoding/pem"
 	"fmt"
-	"io"
-	"math/rand"
-	"net/http"
-	"runtime"
-
+	"github.com/evgenytr/metrics.git/internal/metric"
 	"github.com/go-resty/resty/v2"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/mem"
-
-	"github.com/evgenytr/metrics.git/internal/metric"
+	"io"
+	"math/rand"
+	"net/http"
+	"os"
+	"runtime"
+	"strconv"
 )
 
 type monitor struct {
@@ -314,11 +319,55 @@ func (m *monitor) ReportMetrics() (err error) {
 		metricsBatch = append(metricsBatch, *value)
 	}
 
-	client := resty.New()
+	metricsBytes, err := json.Marshal(metricsBatch)
+	if err != nil {
+		return fmt.Errorf("failed to marshal metrics batch: %w", err)
+	}
 
+	if m.cryptoKey != "" {
+		dat, err := os.ReadFile(m.cryptoKey)
+		if err != nil {
+			return fmt.Errorf("failed to read public key from file: %w", err)
+		}
+
+		block, _ := pem.Decode(dat)
+
+		publicKey, err := x509.ParsePKCS1PublicKey(block.Bytes)
+		if err != nil {
+			return fmt.Errorf("failed to parse public key: %w", err)
+		}
+
+		//The message must be no longer than the length of the public modulus minus 11 bytes.
+
+		step := publicKey.Size() - 11
+
+		var encryptedBytes []byte
+
+		for start := 0; start < len(metricsBytes); start += step {
+			finish := start + step
+			if finish > len(metricsBytes) {
+				finish = len(metricsBytes)
+			}
+
+			encryptedBlockBytes, err := rsa.EncryptPKCS1v15(cryptoRand.Reader, publicKey, metricsBytes[start:finish])
+
+			if err != nil {
+				return fmt.Errorf("failed to encrypt request body: %w", err)
+			}
+
+			encryptedBytes = append(encryptedBytes, encryptedBlockBytes...)
+		}
+
+		fmt.Println("encrypted ", encryptedBytes)
+
+		metricsBytes = encryptedBytes
+	}
+
+	client := resty.New()
 	client.SetPreRequestHook(func(c *resty.Client, req *http.Request) (err error) {
 
 		fmt.Println("On before request")
+
 		if m.key != "" {
 			hash := sha256.New()
 
@@ -347,11 +396,11 @@ func (m *monitor) ReportMetrics() (err error) {
 		return
 	})
 
-	//TODO: add encryption if cryptoKey exists
 	_, err = client.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Accept-Encoding", "gzip").
-		SetBody(metricsBatch).
+		SetHeader("Rsa-Encrypted", strconv.FormatBool(m.cryptoKey != "")).
+		SetBody(metricsBytes).
 		Post(fmt.Sprintf("%v/updates/", m.hostAddress))
 
 	//TODO: properly handle connection refused error (don't quit goroutine)

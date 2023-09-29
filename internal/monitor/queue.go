@@ -87,7 +87,7 @@ func (w *Worker) Loop(ctx context.Context, cancelCtx context.CancelCauseFunc, fn
 
 		if err != nil {
 			for _, retryInterval := range errorHandling.RepeatedAttemptsIntervals {
-				fmt.Printf("worker %d retrying in %s\n", w.id, retryInterval)
+				fmt.Printf("worker %d retrying in %s %s\n", w.id, retryInterval, err)
 				time.Sleep(retryInterval)
 				err = fn()
 				if err == nil {

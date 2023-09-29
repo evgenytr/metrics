@@ -2,9 +2,12 @@
 package middleware
 
 import (
-	"crypto/sha256"
+	"bytes"
+	cryptoRand "crypto/rand"
+	"crypto/rsa"
 	"fmt"
 	"hash"
+	"io"
 	"net/http"
 )
 
@@ -27,22 +30,43 @@ func (r *decryptionResponseWriter) Write(b []byte) (size int, err error) {
 }
 
 // WithDecryption wraps handler with middleware to decrypt body.
-func WithDecryption(cryptoKey string) func(next http.Handler) http.Handler {
+func WithDecryption(cryptoKey *rsa.PrivateKey) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		decryptFn := func(res http.ResponseWriter, req *http.Request) {
+			encrypted := req.Header["Rsa-Encrypted"]
 
-			responseData := &decryptionResponseData{h: sha256.New()}
-			dr := decryptionResponseWriter{
-				ResponseWriter: res,
-				responseData:   responseData,
+			if len(encrypted) != 0 && encrypted[0] == "true" {
+				fmt.Println("encrypted header set in request")
+
+				bodyBytes, err := io.ReadAll(req.Body)
+
+				if err != nil {
+					fmt.Println("err reading request body", err)
+				}
+
+				msgLen := len(bodyBytes)
+				step := cryptoKey.PublicKey.Size()
+				var decryptedBytes []byte
+
+				for start := 0; start < msgLen; start += step {
+					finish := start + step
+					if finish > msgLen {
+						finish = msgLen
+					}
+
+					decryptedBlockBytes, err := rsa.DecryptPKCS1v15(cryptoRand.Reader, cryptoKey, bodyBytes[start:finish])
+
+					if err != nil {
+						fmt.Println("err decrypting request body", err)
+					}
+
+					decryptedBytes = append(decryptedBytes, decryptedBlockBytes...)
+				}
+
+				req.Body = io.NopCloser(bytes.NewBuffer(decryptedBytes))
 			}
 
-			next.ServeHTTP(&dr, req)
-
-			if cryptoKey != "" {
-				fmt.Println(req.RequestURI)
-				fmt.Println("use decrypt")
-			}
+			next.ServeHTTP(res, req)
 
 		}
 		return http.HandlerFunc(decryptFn)
