@@ -76,7 +76,7 @@ func main() {
 	defer func() {
 		err = logger.Sync()
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("zap logger err:", err)
 		}
 	}()
 	sugar := logger.Sugar()
