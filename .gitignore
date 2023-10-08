@@ -23,4 +23,8 @@ vendor/
 # IDEs directories
 .idea
 .vscode
+
+# Private files
 cmd/staticlint/staticlint
+/rsakeys/private.pem
+/rsakeys/public.pub

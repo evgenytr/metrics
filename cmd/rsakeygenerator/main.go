@@ -6,14 +6,20 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
 	"log"
 	"os"
+
+	"github.com/evgenytr/metrics.git/internal/config"
 )
 
 func main() {
 
-	privateKeyFileStoragePath := "rsakeys/private.pem"
-	publicKeyFileStoragePath := "rsakeys/public.pub"
+	publicKeyFileStoragePath, privateKeyFileStoragePath, err := config.GetRsaKeyGeneratorConfig()
+	fmt.Println(publicKeyFileStoragePath, privateKeyFileStoragePath)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
@@ -41,7 +47,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	fmt.Println(privateKeyFileStoragePath)
 	err = os.WriteFile(privateKeyFileStoragePath, privateKeyPEM.Bytes(), 0666)
 	if err != nil {
 		log.Fatal(err)

@@ -1,0 +1,4 @@
+{
+  "public_key_path": "rsakeys/public.pub",
+  "private_key_path": "rsakeys/private.pem"
+}
