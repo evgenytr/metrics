@@ -28,3 +28,4 @@ vendor/
 cmd/staticlint/staticlint
 /rsakeys/private.pem
 /rsakeys/public.pub
+/gen/

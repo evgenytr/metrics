@@ -2,26 +2,26 @@ syntax = "proto3";
 
 import "googleapis/google/rpc/status.proto";
 
-package metrics;
+package proto;
 
-option go_package = "github.com/evgenytr/metrics.git/gen/";
+option go_package = "gen/go/metrics/v1";
 
-// MetricsService
-service MetricsService{
+service MetricsServiceV1{
   rpc MetricsBatchV1(MetricsBatchRequest) returns (google.rpc.Status){} //processes array of metrics and saves them all at once
+}
+
+enum MetricType{
+  GAUGE_METRIC_TYPE = 0;
+  COUNTER_METRIC_TYPE = 1;
 }
 
 message Metric{
   string id = 1;
-  MType type = 2;
+  MetricType type = 2;
   int64 delta = 3;
   double value = 4;
 }
 
-enum MType{
-  GAUGE_METRIC_TYPE = 0;
-  COUNTER_METRIC_TYPE = 1;
-}
 message MetricsBatchRequest{
   repeated Metric metrics = 1;
   int32 count = 2;
