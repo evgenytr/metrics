@@ -48,6 +48,7 @@ func WithLogging(logger *zap.SugaredLogger) func(next http.Handler) http.Handler
 			encoding := req.Header["Accept-Encoding"]
 			hash := req.Header["Hashsha256"]
 			encrypted := req.Header["Rsa-Encrypted"]
+			realIP := req.Header["X-Real-Ip"]
 
 			next.ServeHTTP(&lw, req)
 			duration := time.Since(start)
@@ -60,6 +61,7 @@ func WithLogging(logger *zap.SugaredLogger) func(next http.Handler) http.Handler
 				"size", responseData.size,
 				"hash", hash,
 				"encrypted", encrypted,
+				"request IP", realIP,
 			)
 		}
 		return http.HandlerFunc(logFn)
