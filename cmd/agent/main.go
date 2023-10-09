@@ -59,11 +59,11 @@ func main() {
 
 	if rateLimit <= 0 {
 		reportWorker := monitor.NewWorker(reportWorkerID, reportQueue)
-		go reportWorker.Loop(workerCtx, cancelWorkerCtx, currMetrics.ReportMetrics)
+		go reportWorker.Loop(workerCtx, cancelWorkerCtx, currMetrics.ReportMetricsGrpc)
 	} else {
 		for i := int64(0); i < rateLimit; i++ {
 			reportWorker := monitor.NewWorker(i+reportWorkerID, reportQueue)
-			go reportWorker.Loop(workerCtx, cancelWorkerCtx, currMetrics.ReportMetrics)
+			go reportWorker.Loop(workerCtx, cancelWorkerCtx, currMetrics.ReportMetricsGrpc)
 		}
 	}
 
@@ -93,7 +93,7 @@ func main() {
 
 		fmt.Println("report collected metrics before shutdown")
 		//report collected metrics before shutting down
-		err = currMetrics.ReportMetrics()
+		err = currMetrics.ReportMetricsGrpc()
 		if err != nil {
 			log.Fatalln(err)
 		}

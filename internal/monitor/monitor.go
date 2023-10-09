@@ -20,6 +20,9 @@ import (
 	"strconv"
 	"sync"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
 	"github.com/evgenytr/metrics.git/internal/metric"
 	"github.com/go-resty/resty/v2"
 	"github.com/shirou/gopsutil/v3/cpu"
@@ -40,6 +43,7 @@ type Monitor interface {
 	PollMetrics() error
 	PollAdditionalMetrics() error
 	ReportMetrics() error
+	ReportMetricsGrpc() error
 	ResetPollCount()
 }
 
@@ -429,13 +433,24 @@ func (m *monitor) ReportMetrics() (err error) {
 func (m *monitor) ReportMetricsGrpc() (err error) {
 	fmt.Println("reportMetrics gRPC")
 
-	m.wg.Add(1)
-	defer m.wg.Done()
-
 	if len(m.metrics) == 0 {
 		fmt.Println("empty batch")
 		return
 	}
+
+	var opts []grpc.DialOption
+
+	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	conn, err := grpc.Dial(m.hostAddress, opts...)
+	if err != nil {
+		return fmt.Errorf("failed to dial gRPC server: %w", err)
+	}
+
+	defer conn.Close()
+
+	m.wg.Add(1)
+	defer m.wg.Done()
 
 	var metricsBatch []metric.Metrics
 
@@ -443,11 +458,7 @@ func (m *monitor) ReportMetricsGrpc() (err error) {
 		metricsBatch = append(metricsBatch, *value)
 	}
 
-	metricsBytes, err := json.Marshal(metricsBatch)
-	if err != nil {
-		return fmt.Errorf("failed to marshal metrics batch: %w", err)
-	}
-	fmt.Println(metricsBytes)
+	//TODO: send
 	if err != nil {
 		return fmt.Errorf("failed to post updates: %w", err)
 	}
