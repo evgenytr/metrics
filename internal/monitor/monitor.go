@@ -11,17 +11,20 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"github.com/evgenytr/metrics.git/internal/metric"
-	"github.com/go-resty/resty/v2"
-	"github.com/shirou/gopsutil/v3/cpu"
-	"github.com/shirou/gopsutil/v3/mem"
 	"io"
 	"math/rand"
+	"net"
 	"net/http"
 	"os"
 	"runtime"
 	"strconv"
 	"sync"
+
+	"github.com/evgenytr/metrics.git/internal/metric"
+	"github.com/go-resty/resty/v2"
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/mem"
+	_ "github.com/shirou/gopsutil/v3/net"
 )
 
 type monitor struct {
@@ -400,9 +403,15 @@ func (m *monitor) ReportMetrics() (err error) {
 		return
 	})
 
+	realIP, err := getIP()
+	if err != nil {
+		return fmt.Errorf("failed to get IP: %w", err)
+	}
+
 	_, err = client.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Accept-Encoding", "gzip").
+		SetHeader("X-Real-Ip", realIP.IP.String()).
 		SetHeader("Rsa-Encrypted", strconv.FormatBool(m.cryptoKey != "")).
 		SetBody(metricsBytes).
 		Post(fmt.Sprintf("%v/updates/", m.hostAddress))
@@ -412,6 +421,53 @@ func (m *monitor) ReportMetrics() (err error) {
 
 	if err != nil {
 		return fmt.Errorf("failed to post updates: %w", err)
+	}
+	return
+}
+
+// ReportMetricsGrpc sends metrics by gRPC
+func (m *monitor) ReportMetricsGrpc() (err error) {
+	fmt.Println("reportMetrics gRPC")
+
+	m.wg.Add(1)
+	defer m.wg.Done()
+
+	if len(m.metrics) == 0 {
+		fmt.Println("empty batch")
+		return
+	}
+
+	var metricsBatch []metric.Metrics
+
+	for _, value := range m.metrics {
+		metricsBatch = append(metricsBatch, *value)
+	}
+
+	metricsBytes, err := json.Marshal(metricsBatch)
+	if err != nil {
+		return fmt.Errorf("failed to marshal metrics batch: %w", err)
+	}
+	fmt.Println(metricsBytes)
+	if err != nil {
+		return fmt.Errorf("failed to post updates: %w", err)
+	}
+	return
+}
+
+func getIP() (realIP *net.IPNet, err error) {
+
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		err = fmt.Errorf("failed to get IPs: %w", err)
+		return
+	}
+
+	for _, addr := range addrs {
+		ipNet, ok := addr.(*net.IPNet)
+		if ok && !ipNet.IP.IsLoopback() && ipNet.IP.To4() != nil {
+			realIP = ipNet
+			break
+		}
 	}
 	return
 }

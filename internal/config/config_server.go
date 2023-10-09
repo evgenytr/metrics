@@ -21,18 +21,19 @@ type serverConfig struct {
 	StoreInterval   float64 `env:"STORE_INTERVAL" json:"store_interval,omitempty"`
 	Restore         bool    `env:"RESTORE" json:"restore,omitempty"`
 	CryptoKey       string  `env:"CRYPTO_KEY" json:"crypto_key,omitempty"`
+	TrustedSubnet   string  `env:"TRUSTED_SUBNET" json:"trusted_subnet,omitempty"`
 	ConfigFile      string  `env:"CONFIG"`
 }
 
 // GetServerConfig returns server config params
-func GetServerConfig() (host string, storeIntervalOut time.Duration, fileStoragePath string, restore bool, dbDSN, key, cryptoKey string) {
+func GetServerConfig() (host string, storeIntervalOut time.Duration, fileStoragePath string, restore bool, dbDSN, key, cryptoKey, trustedSubnet string) {
 
 	var storeIntervalIn float64
 	var cfg serverConfig
 
 	_ = env.Parse(&cfg)
 
-	host, storeIntervalIn, fileStoragePath, restore, dbDSN, key, cryptoKey = getServerFlags(cfg.ConfigFile)
+	host, storeIntervalIn, fileStoragePath, restore, dbDSN, key, cryptoKey, trustedSubnet = getServerFlags(cfg.ConfigFile)
 
 	if cfg.Host != "" {
 		host = cfg.Host
@@ -65,12 +66,16 @@ func GetServerConfig() (host string, storeIntervalOut time.Duration, fileStorage
 		cryptoKey = cfg.CryptoKey
 	}
 
+	if cfg.TrustedSubnet != "" {
+		trustedSubnet = cfg.TrustedSubnet
+	}
+
 	storeIntervalOut = utils.GetTimeInterval(storeIntervalIn)
 
 	return
 }
 
-func getServerFlags(configFile string) (host string, storeInterval float64, fileStoragePath string, restore bool, dbDSN, key, cryptoKey string) {
+func getServerFlags(configFile string) (host string, storeInterval float64, fileStoragePath string, restore bool, dbDSN, key, cryptoKey, trustedSubnet string) {
 
 	if flag.Lookup("config") == nil && configFile == "" {
 		fmt.Println("setting config file from flag")
@@ -98,7 +103,9 @@ func getServerFlags(configFile string) (host string, storeInterval float64, file
 	if flag.Lookup("crypto-key") == nil {
 		flag.StringVar(&cryptoKey, "crypto-key", "", "crypto key path")
 	}
-
+	if flag.Lookup("t") == nil {
+		flag.StringVar(&trustedSubnet, "t", "", "trusted subnet CIDR")
+	}
 	flag.Parse()
 
 	//sensible defaults to run in absence of flags and env vars
@@ -154,6 +161,10 @@ func getServerFlags(configFile string) (host string, storeInterval float64, file
 
 	if fileStoragePath == "" {
 		fileStoragePath = configDefaults.FileStoragePath
+	}
+
+	if trustedSubnet == "" {
+		trustedSubnet = configDefaults.TrustedSubnet
 	}
 
 	return
