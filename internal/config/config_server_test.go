@@ -16,6 +16,7 @@ func TestGetServerConfig(t *testing.T) {
 		wantDBDSN            string
 		wantKey              string
 		wantCryptoKey        string
+		wantTrustedSubnet    string
 	}{
 		{
 			name:                 "Defaults",
@@ -26,11 +27,12 @@ func TestGetServerConfig(t *testing.T) {
 			wantDBDSN:            "",
 			wantKey:              "",
 			wantCryptoKey:        "./rsakeys/private.pem",
+			wantTrustedSubnet:    "192.168.0.0/24",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotHost, gotStoreIntervalOut, gotFileStoragePath, gotRestore, gotDBDSN, gotKey, gotCryptoKey := GetServerConfig()
+			gotHost, gotStoreIntervalOut, gotFileStoragePath, gotRestore, gotDBDSN, gotKey, gotCryptoKey, gotTrustedSubnet := GetServerConfig()
 			if !reflect.DeepEqual(gotHost, tt.wantHost) {
 				t.Errorf("GetServerConfig() gotHost = %v, want %v", gotHost, tt.wantHost)
 			}
@@ -50,6 +52,9 @@ func TestGetServerConfig(t *testing.T) {
 				t.Errorf("GetServerConfig() gotKey = %v, want %v", gotKey, tt.wantKey)
 			}
 			if !reflect.DeepEqual(gotCryptoKey, tt.wantCryptoKey) {
+				t.Errorf("GetAgentConfig() gotCryptoKey = %v, want %v", gotCryptoKey, tt.wantCryptoKey)
+			}
+			if !reflect.DeepEqual(gotTrustedSubnet, tt.wantTrustedSubnet) {
 				t.Errorf("GetAgentConfig() gotCryptoKey = %v, want %v", gotCryptoKey, tt.wantCryptoKey)
 			}
 		})

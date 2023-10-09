@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"net"
 	"os"
 
 	"github.com/go-chi/chi/v5"
@@ -18,8 +19,18 @@ import (
 const CompressionLevel = 5
 
 // Router method creates new Router.
-func Router(sugar *zap.SugaredLogger, h *handlers.StorageHandler, key, cryptoKey string) (r *chi.Mux, err error) {
+func Router(sugar *zap.SugaredLogger, h *handlers.StorageHandler, key, cryptoKey, trustedSubnet string) (r *chi.Mux, err error) {
 	r = chi.NewRouter()
+
+	if trustedSubnet != "" {
+		fmt.Println("middleware with trusted subnet used")
+		_, ipNet, err := net.ParseCIDR(trustedSubnet)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse trusted subnet CIDR: %w", err)
+		}
+		withSubnetCheck := middleware.WithSubnetCheck(ipNet)
+		r.Use(withSubnetCheck)
+	}
 
 	if key != "" {
 		fmt.Println("middleware with signature check used")
