@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+package metrics;
+
+option go_package = "github.com/evgenytr/metrics.git/gen/";
+
+service MetricsService{
+  rpc MetricsBatch(MetricsBatchRequest) returns ()
+}
+
+message Metric
