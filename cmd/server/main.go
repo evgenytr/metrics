@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"google.golang.org/genproto/googleapis/rpc/status"
 	"log"
 	"net"
 	"net/http"
@@ -14,7 +15,6 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/status"
 
 	pb "github.com/evgenytr/metrics.git/gen/go/metrics/v1"
 	"github.com/evgenytr/metrics.git/internal/config"
@@ -39,8 +39,8 @@ type MetricsServer struct {
 	pb.UnimplementedMetricsServiceV1Server
 }
 
-func (s *MetricsServer) MetricsBatchV1(ctx context.Context, req *pb.MetricsBatchRequest) (*status.Status, error) {
-
+func (s *MetricsServer) MetricsBatchV1(ctx context.Context, req *pb.MetricsBatchRequest) (status *status.Status, err error) {
+	return
 }
 
 func main() {
