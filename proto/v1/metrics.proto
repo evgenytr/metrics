@@ -2,9 +2,9 @@ syntax = "proto3";
 
 import "googleapis/google/rpc/status.proto";
 
-package proto;
+package api;
 
-option go_package = "gen/go/metrics/v1";
+option go_package = "github.com/evgenytr/metrics.git/pkg/api";
 
 service MetricsServiceV1{
   rpc MetricsBatchV1(MetricsBatchRequest) returns (google.rpc.Status){} //processes array of metrics and saves them all at once

@@ -9,6 +9,7 @@ func TestGetServerConfig(t *testing.T) {
 	tests := []struct {
 		name                 string
 		wantHost             string
+		wantHostGrpc         string
 		wantStoreIntervalOut time.Duration
 		wantFileStoragePath  string
 		wantRestore          bool
@@ -20,6 +21,7 @@ func TestGetServerConfig(t *testing.T) {
 		{
 			name:                 "Defaults",
 			wantHost:             "localhost:8080",
+			wantHostGrpc:         "localhost:3200",
 			wantStoreIntervalOut: 300 * time.Second,
 			wantFileStoragePath:  "/tmp/metrics-db.json",
 			wantRestore:          true,
@@ -31,9 +33,12 @@ func TestGetServerConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotHost, gotStoreIntervalOut, gotFileStoragePath, gotRestore, gotDBDSN, gotKey, gotCryptoKey, gotTrustedSubnet := GetServerConfig()
+			gotHost, gotHostGrpc, gotStoreIntervalOut, gotFileStoragePath, gotRestore, gotDBDSN, gotKey, gotCryptoKey, gotTrustedSubnet := GetServerConfig()
 			if gotHost != tt.wantHost {
 				t.Errorf("GetServerConfig() gotHost = %v, want %v", gotHost, tt.wantHost)
+			}
+			if gotHostGrpc != tt.wantHostGrpc {
+				t.Errorf("GetServerConfig() gotHostGrpc = %v, want %v", gotHostGrpc, tt.wantHostGrpc)
 			}
 			if gotStoreIntervalOut != tt.wantStoreIntervalOut {
 				t.Errorf("GetServerConfig() gotStoreIntervalOut = %v, want %v", gotStoreIntervalOut, tt.wantStoreIntervalOut)

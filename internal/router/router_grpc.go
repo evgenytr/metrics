@@ -6,9 +6,9 @@ import (
 	"google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/codes"
 
-	pb "github.com/evgenytr/metrics.git/gen/go/metrics/v1"
 	"github.com/evgenytr/metrics.git/internal/interfaces"
 	"github.com/evgenytr/metrics.git/internal/metric"
+	pb "github.com/evgenytr/metrics.git/pkg/api/v1"
 )
 
 type MetricsServer struct {

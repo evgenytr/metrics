@@ -24,7 +24,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	pb "github.com/evgenytr/metrics.git/gen/go/metrics/v1"
+	pb "github.com/evgenytr/metrics.git/pkg/api/v1"
 
 	"github.com/evgenytr/metrics.git/internal/metric"
 	"github.com/go-resty/resty/v2"

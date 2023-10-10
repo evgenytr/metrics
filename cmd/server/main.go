@@ -14,7 +14,6 @@ import (
 	"syscall"
 	"time"
 
-	pb "github.com/evgenytr/metrics.git/gen/go/metrics/v1"
 	"github.com/evgenytr/metrics.git/internal/config"
 	errorHandling "github.com/evgenytr/metrics.git/internal/errors"
 	"github.com/evgenytr/metrics.git/internal/handlers"
@@ -22,6 +21,7 @@ import (
 	"github.com/evgenytr/metrics.git/internal/logging"
 	"github.com/evgenytr/metrics.git/internal/router"
 	"github.com/evgenytr/metrics.git/internal/storage"
+	pb "github.com/evgenytr/metrics.git/pkg/api/v1"
 
 	"github.com/go-chi/chi/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"

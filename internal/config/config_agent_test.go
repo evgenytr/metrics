@@ -10,6 +10,7 @@ func TestGetAgentConfig(t *testing.T) {
 	tests := []struct {
 		name                  string
 		wantHost              string
+		wantHostGrpc          string
 		wantPollIntervalOut   time.Duration
 		wantReportIntervalOut time.Duration
 		wantKey               string
@@ -19,6 +20,7 @@ func TestGetAgentConfig(t *testing.T) {
 		{
 			name:                  "Defaults",
 			wantHost:              "localhost:8080",
+			wantHostGrpc:          "localhost:3200",
 			wantPollIntervalOut:   1 * time.Second,
 			wantReportIntervalOut: 10 * time.Second,
 			wantKey:               "",
@@ -28,9 +30,12 @@ func TestGetAgentConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotHost, gotPollIntervalOut, gotReportIntervalOut, gotKey, gotRateLimit, gotCryptoKey := GetAgentConfig()
+			gotHost, gotHostGrpc, gotPollIntervalOut, gotReportIntervalOut, gotKey, gotRateLimit, gotCryptoKey := GetAgentConfig()
 			if !reflect.DeepEqual(gotHost, tt.wantHost) {
 				t.Errorf("GetAgentConfig() gotHost = %v, want %v", gotHost, tt.wantHost)
+			}
+			if gotHostGrpc != tt.wantHostGrpc {
+				t.Errorf("GetAgentConfig() gotHostGrpc = %v, want %v", gotHostGrpc, tt.wantHostGrpc)
 			}
 			if !reflect.DeepEqual(gotPollIntervalOut, tt.wantPollIntervalOut) {
 				t.Errorf("GetAgentConfig() gotPollIntervalOut = %v, want %v", gotPollIntervalOut, tt.wantPollIntervalOut)
