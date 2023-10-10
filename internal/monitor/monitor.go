@@ -3,6 +3,7 @@ package monitor
 
 import (
 	"bytes"
+	"context"
 	cryptoRand "crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -23,6 +24,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	pb "github.com/evgenytr/metrics.git/gen/go/metrics/v1"
+
 	"github.com/evgenytr/metrics.git/internal/metric"
 	"github.com/go-resty/resty/v2"
 	"github.com/shirou/gopsutil/v3/cpu"
@@ -33,6 +36,7 @@ import (
 type monitor struct {
 	metrics     map[string]*metric.Metrics
 	hostAddress string
+	hostGrpc    string
 	key         string
 	cryptoKey   string
 	wg          *sync.WaitGroup
@@ -103,7 +107,7 @@ func initMap() (initialMap map[string]*metric.Metrics, err error) {
 }
 
 // NewMonitor returns
-func NewMonitor(hostAddress, key, cryptoKey string, wg *sync.WaitGroup) (m Monitor, err error) {
+func NewMonitor(hostAddress, hostGrpc, key, cryptoKey string, wg *sync.WaitGroup) (m Monitor, err error) {
 	initialMap, err := initMap()
 	if err != nil {
 		return
@@ -111,6 +115,7 @@ func NewMonitor(hostAddress, key, cryptoKey string, wg *sync.WaitGroup) (m Monit
 	m = &monitor{
 		metrics:     initialMap,
 		hostAddress: hostAddress,
+		hostGrpc:    hostGrpc,
 		key:         key,
 		cryptoKey:   cryptoKey,
 		wg:          wg,
@@ -442,7 +447,7 @@ func (m *monitor) ReportMetricsGrpc() (err error) {
 
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
-	conn, err := grpc.Dial(m.hostAddress, opts...)
+	conn, err := grpc.Dial(m.hostGrpc, opts...)
 	if err != nil {
 		return fmt.Errorf("failed to dial gRPC server: %w", err)
 	}
@@ -452,16 +457,30 @@ func (m *monitor) ReportMetricsGrpc() (err error) {
 	m.wg.Add(1)
 	defer m.wg.Done()
 
-	var metricsBatch []metric.Metrics
+	var metricsBatch pb.MetricsBatchRequest
 
 	for _, value := range m.metrics {
-		metricsBatch = append(metricsBatch, *value)
+		pbMetric := &pb.Metric{
+			Id:    value.ID,
+			Type:  value.MType,
+			Delta: value.Delta,
+			Value: value.Value,
+		}
+		metricsBatch.Metrics = append(metricsBatch.Metrics, pbMetric)
 	}
 
-	//TODO: send
+	metricsBatch.Count = int32(len(metricsBatch.Metrics))
+
+	c := pb.NewMetricsServiceV1Client(conn)
+
+	ctx := context.TODO()
+	resp, err := c.MetricsBatchV1(ctx, &metricsBatch)
+
 	if err != nil {
 		return fmt.Errorf("failed to post updates: %w", err)
 	}
+
+	fmt.Println(resp)
 	return
 }
 

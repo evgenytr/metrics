@@ -10,14 +10,9 @@ service MetricsServiceV1{
   rpc MetricsBatchV1(MetricsBatchRequest) returns (google.rpc.Status){} //processes array of metrics and saves them all at once
 }
 
-enum MetricType{
-  GAUGE_METRIC_TYPE = 0;
-  COUNTER_METRIC_TYPE = 1;
-}
-
 message Metric{
   string id = 1;
-  MetricType type = 2;
+  string type = 2;
   int64 delta = 3;
   double value = 4;
 }

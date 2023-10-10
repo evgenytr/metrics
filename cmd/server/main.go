@@ -5,7 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"google.golang.org/genproto/googleapis/rpc/status"
+	"google.golang.org/grpc"
 	"log"
 	"net"
 	"net/http"
@@ -13,8 +13,6 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-
-	"google.golang.org/grpc"
 
 	pb "github.com/evgenytr/metrics.git/gen/go/metrics/v1"
 	"github.com/evgenytr/metrics.git/internal/config"
@@ -34,14 +32,6 @@ var (
 	buildDate    = "N/A"
 	buildCommit  = "N/A"
 )
-
-type MetricsServer struct {
-	pb.UnimplementedMetricsServiceV1Server
-}
-
-func (s *MetricsServer) MetricsBatchV1(ctx context.Context, req *pb.MetricsBatchRequest) (status *status.Status, err error) {
-	return
-}
 
 func main() {
 
@@ -122,7 +112,7 @@ func main() {
 	}
 
 	s := grpc.NewServer()
-	pb.RegisterMetricsServiceV1Server(s, &MetricsServer{})
+	pb.RegisterMetricsServiceV1Server(s, router.NewMetricsServerWithStorage(appStorage))
 
 	go listenAndServe(ctx, host, r)
 	go listenAndServeGrpc(ctx, s, listen)

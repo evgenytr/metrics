@@ -15,6 +15,7 @@ import (
 
 type agentConfig struct {
 	Host           string  `env:"ADDRESS" json:"address,omitempty"`
+	HostGrpc       string  `json:"address_grpc,omitempty"`
 	Key            string  `env:"KEY" json:"key,omitempty"`
 	ReportInterval float64 `env:"REPORT_INTERVAL" json:"report_interval,omitempty"`
 	PollInterval   float64 `env:"POLL_INTERVAL" json:"poll_interval,omitempty"`
@@ -24,7 +25,7 @@ type agentConfig struct {
 }
 
 // GetAgentConfig returns agent config params
-func GetAgentConfig() (host string, pollIntervalOut, reportIntervalOut time.Duration, key string, rateLimit int64, cryptoKeyFile string) {
+func GetAgentConfig() (host, hostGrpc string, pollIntervalOut, reportIntervalOut time.Duration, key string, rateLimit int64, cryptoKeyFile string) {
 
 	var cfg agentConfig
 	var pollIntervalIn, reportIntervalIn float64
@@ -33,7 +34,7 @@ func GetAgentConfig() (host string, pollIntervalOut, reportIntervalOut time.Dura
 
 	fmt.Println(cfg)
 
-	host, pollIntervalIn, reportIntervalIn, key, rateLimit, cryptoKeyFile = getAgentFlags(cfg.ConfigFile)
+	host, hostGrpc, pollIntervalIn, reportIntervalIn, key, rateLimit, cryptoKeyFile = getAgentFlags(cfg.ConfigFile)
 
 	if cfg.Host != "" {
 		host = cfg.Host
@@ -65,7 +66,7 @@ func GetAgentConfig() (host string, pollIntervalOut, reportIntervalOut time.Dura
 	return
 }
 
-func getAgentFlags(configFile string) (host string, pollInterval, reportInterval float64, key string, rateLimit int64, cryptoKeyFile string) {
+func getAgentFlags(configFile string) (host, hostGrpc string, pollInterval, reportInterval float64, key string, rateLimit int64, cryptoKeyFile string) {
 
 	if flag.Lookup("config") == nil && configFile == "" {
 		fmt.Println("setting config file from flag")
@@ -96,6 +97,7 @@ func getAgentFlags(configFile string) (host string, pollInterval, reportInterval
 	//sensible defaults to run in absence of flags and env vars
 	configDefaults := &agentConfig{
 		Host:           "localhost:8080",
+		HostGrpc:       "localhost:3200",
 		PollInterval:   1,
 		ReportInterval: 10,
 		RateLimit:      2,
@@ -122,6 +124,10 @@ func getAgentFlags(configFile string) (host string, pollInterval, reportInterval
 	//set defaults for values that were not set from flags
 	if host == "" {
 		host = configDefaults.Host
+	}
+
+	if hostGrpc == "" {
+		hostGrpc = configDefaults.HostGrpc
 	}
 
 	if key == "" {
