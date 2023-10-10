@@ -6,12 +6,17 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
+
+	pb "github.com/evgenytr/metrics.git/gen/go/metrics/v1"
 	"github.com/evgenytr/metrics.git/internal/config"
 	errorHandling "github.com/evgenytr/metrics.git/internal/errors"
 	"github.com/evgenytr/metrics.git/internal/handlers"
@@ -30,6 +35,14 @@ var (
 	buildCommit  = "N/A"
 )
 
+type MetricsServer struct {
+	pb.UnimplementedMetricsServiceV1Server
+}
+
+func (s *MetricsServer) MetricsBatchV1(ctx context.Context, req *pb.MetricsBatchRequest) (*status.Status, error) {
+
+}
+
 func main() {
 
 	fmt.Println("Build version: ", buildVersion)
@@ -39,7 +52,7 @@ func main() {
 	var err error
 	var db *sql.DB
 
-	host, storeInterval, fileStoragePath, restore, dbDSN, key, cryptoKey, trustedSubnet := config.GetServerConfig()
+	host, gRPCHost, storeInterval, fileStoragePath, restore, dbDSN, key, cryptoKey, trustedSubnet := config.GetServerConfig()
 
 	fmt.Println(host, storeInterval, fileStoragePath, restore, dbDSN, key, cryptoKey, trustedSubnet)
 
@@ -102,7 +115,17 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	listen, err := net.Listen("tcp", gRPCHost)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	s := grpc.NewServer()
+	pb.RegisterMetricsServiceV1Server(s, &MetricsServer{})
+
 	go listenAndServe(ctx, host, r)
+	go listenAndServeGrpc(ctx, s, listen)
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
@@ -133,6 +156,15 @@ func listenAndServe(ctx context.Context, host string, r *chi.Mux) {
 	err := http.ListenAndServe(host, r)
 	if err != nil {
 		fmt.Println("listenAndServe err", err)
+		cancelCtx(err)
+	}
+}
+
+func listenAndServeGrpc(ctx context.Context, s *grpc.Server, listen net.Listener) {
+	_, cancelCtx := context.WithCancelCause(ctx)
+	err := s.Serve(listen)
+	if err != nil {
+		fmt.Println("listenAndServe gRPC err", err)
 		cancelCtx(err)
 	}
 }

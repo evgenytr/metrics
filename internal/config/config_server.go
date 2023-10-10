@@ -15,6 +15,7 @@ import (
 
 type serverConfig struct {
 	Host            string  `env:"ADDRESS" json:"address,omitempty"`
+	HostGrpc        string  `json:"grpc_address,omitempty"`
 	FileStoragePath string  `env:"FILE_STORAGE_PATH" json:"store_file,omitempty"`
 	DatabaseDSN     string  `env:"DATABASE_DSN" json:"database_dsn,omitempty"`
 	Key             string  `env:"KEY" json:"key,omitempty"`
@@ -26,17 +27,21 @@ type serverConfig struct {
 }
 
 // GetServerConfig returns server config params
-func GetServerConfig() (host string, storeIntervalOut time.Duration, fileStoragePath string, restore bool, dbDSN, key, cryptoKey, trustedSubnet string) {
+func GetServerConfig() (host, gRPCHost string, storeIntervalOut time.Duration, fileStoragePath string, restore bool, dbDSN, key, cryptoKey, trustedSubnet string) {
 
 	var storeIntervalIn float64
 	var cfg serverConfig
 
 	_ = env.Parse(&cfg)
 
-	host, storeIntervalIn, fileStoragePath, restore, dbDSN, key, cryptoKey, trustedSubnet = getServerFlags(cfg.ConfigFile)
+	host, gRPCHost, storeIntervalIn, fileStoragePath, restore, dbDSN, key, cryptoKey, trustedSubnet = getServerFlags(cfg.ConfigFile)
 
 	if cfg.Host != "" {
 		host = cfg.Host
+	}
+
+	if cfg.HostGrpc != "" {
+		gRPCHost = cfg.HostGrpc
 	}
 
 	//STORE_INTERVAL can be set to 0, hence can't check it as !=0
@@ -75,7 +80,7 @@ func GetServerConfig() (host string, storeIntervalOut time.Duration, fileStorage
 	return
 }
 
-func getServerFlags(configFile string) (host string, storeInterval float64, fileStoragePath string, restore bool, dbDSN, key, cryptoKey, trustedSubnet string) {
+func getServerFlags(configFile string) (host, gRPCHost string, storeInterval float64, fileStoragePath string, restore bool, dbDSN, key, cryptoKey, trustedSubnet string) {
 
 	if flag.Lookup("config") == nil && configFile == "" {
 		fmt.Println("setting config file from flag")
@@ -137,6 +142,10 @@ func getServerFlags(configFile string) (host string, storeInterval float64, file
 	//set defaults for values that were not set from flags
 	if host == "" {
 		host = configDefaults.Host
+	}
+
+	if gRPCHost == "" {
+		gRPCHost = configDefaults.HostGrpc
 	}
 
 	if key == "" {
