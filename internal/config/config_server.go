@@ -116,6 +116,7 @@ func getServerFlags(configFile string) (host, gRPCHost string, storeInterval flo
 	//sensible defaults to run in absence of flags and env vars
 	configDefaults := &serverConfig{
 		Host:            "localhost:8080",
+		HostGrpc:        "localhost:3200",
 		StoreInterval:   300,
 		FileStoragePath: "/tmp/metrics-db.json",
 		Restore:         true,
