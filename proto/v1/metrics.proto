@@ -1,23 +1,29 @@
 syntax = "proto3";
+package api.v1;
 
 import "googleapis/google/rpc/status.proto";
-
-package api;
+import "googleapis/google/api/annotations.proto";
+import "protoc-gen-swagger/options/annotations.proto";
 
 option go_package = "github.com/evgenytr/metrics.git/pkg/api";
 
-service MetricsServiceV1{
-  rpc MetricsBatchV1(MetricsBatchRequest) returns (google.rpc.Status){} //processes array of metrics and saves them all at once
+service MetricsServiceV1 {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_tag) = {
+    description : "MetricsBatchV1 processes array of metrics and saves them "
+                  "all at once"
+  };
+  // MetricsBatchV1 processes array of metrics and saves them all at once
+  rpc MetricsBatchV1(MetricsBatchRequest) returns (google.rpc.Status) {}
 }
 
-message Metric{
+message Metric {
   string id = 1;
   string type = 2;
   int64 delta = 3;
   double value = 4;
 }
 
-message MetricsBatchRequest{
+message MetricsBatchRequest {
   repeated Metric metrics = 1;
   int32 count = 2;
 }
