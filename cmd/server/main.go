@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/evgenytr/metrics.git/internal/interceptors"
 	"google.golang.org/grpc"
 	"log"
 	"net"
@@ -111,7 +112,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	s := grpc.NewServer()
+	s := grpc.NewServer(grpc.ChainUnaryInterceptor(interceptors.ValidateRequest))
 	pb.RegisterMetricsServiceV1Server(s, router.NewMetricsServerWithStorage(appStorage))
 
 	go listenAndServe(ctx, host, r)
