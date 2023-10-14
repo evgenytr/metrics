@@ -5,7 +5,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/evgenytr/metrics.git/internal/interceptors"
+	"google.golang.org/grpc"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,6 +22,7 @@ import (
 	"github.com/evgenytr/metrics.git/internal/logging"
 	"github.com/evgenytr/metrics.git/internal/router"
 	"github.com/evgenytr/metrics.git/internal/storage"
+	pb "github.com/evgenytr/metrics.git/pkg/api/v1"
 
 	"github.com/go-chi/chi/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -39,9 +43,9 @@ func main() {
 	var err error
 	var db *sql.DB
 
-	host, storeInterval, fileStoragePath, restore, dbDSN, key, cryptoKey := config.GetServerConfig()
+	host, gRPCHost, storeInterval, fileStoragePath, restore, dbDSN, key, cryptoKey, trustedSubnet := config.GetServerConfig()
 
-	fmt.Println(host, storeInterval, fileStoragePath, restore, dbDSN, key, cryptoKey)
+	fmt.Println(host, storeInterval, fileStoragePath, restore, dbDSN, key, cryptoKey, trustedSubnet)
 
 	if dbDSN != "" {
 		db, err = sql.Open("pgx", dbDSN)
@@ -96,13 +100,23 @@ func main() {
 		go storeMetrics(ctx, storeInterval, appStorage)
 	}
 
-	r, err := router.Router(sugar, storageHandler, key, cryptoKey)
+	r, err := router.Router(sugar, storageHandler, key, cryptoKey, trustedSubnet)
 
 	if err != nil {
 		log.Fatalln(err)
 	}
 
+	listen, err := net.Listen("tcp", gRPCHost)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	s := grpc.NewServer(grpc.ChainUnaryInterceptor(interceptors.ValidateRequest))
+	pb.RegisterMetricsServiceV1Server(s, router.NewMetricsServerWithStorage(appStorage))
+
 	go listenAndServe(ctx, host, r)
+	go listenAndServeGrpc(ctx, s, listen)
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
@@ -133,6 +147,15 @@ func listenAndServe(ctx context.Context, host string, r *chi.Mux) {
 	err := http.ListenAndServe(host, r)
 	if err != nil {
 		fmt.Println("listenAndServe err", err)
+		cancelCtx(err)
+	}
+}
+
+func listenAndServeGrpc(ctx context.Context, s *grpc.Server, listen net.Listener) {
+	_, cancelCtx := context.WithCancelCause(ctx)
+	err := s.Serve(listen)
+	if err != nil {
+		fmt.Println("listenAndServe gRPC err", err)
 		cancelCtx(err)
 	}
 }

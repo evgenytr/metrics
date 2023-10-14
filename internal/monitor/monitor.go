@@ -3,6 +3,7 @@ package monitor
 
 import (
 	"bytes"
+	"context"
 	cryptoRand "crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -11,22 +12,31 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"github.com/evgenytr/metrics.git/internal/metric"
-	"github.com/go-resty/resty/v2"
-	"github.com/shirou/gopsutil/v3/cpu"
-	"github.com/shirou/gopsutil/v3/mem"
 	"io"
 	"math/rand"
+	"net"
 	"net/http"
 	"os"
 	"runtime"
 	"strconv"
 	"sync"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
+	pb "github.com/evgenytr/metrics.git/pkg/api/v1"
+
+	"github.com/evgenytr/metrics.git/internal/metric"
+	"github.com/go-resty/resty/v2"
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/mem"
+	_ "github.com/shirou/gopsutil/v3/net"
 )
 
 type monitor struct {
 	metrics     map[string]*metric.Metrics
 	hostAddress string
+	hostGrpc    string
 	key         string
 	cryptoKey   string
 	wg          *sync.WaitGroup
@@ -37,6 +47,7 @@ type Monitor interface {
 	PollMetrics() error
 	PollAdditionalMetrics() error
 	ReportMetrics() error
+	ReportMetricsGrpc() error
 	ResetPollCount()
 }
 
@@ -96,7 +107,7 @@ func initMap() (initialMap map[string]*metric.Metrics, err error) {
 }
 
 // NewMonitor returns
-func NewMonitor(hostAddress, key, cryptoKey string, wg *sync.WaitGroup) (m Monitor, err error) {
+func NewMonitor(hostAddress, hostGrpc, key, cryptoKey string, wg *sync.WaitGroup) (m Monitor, err error) {
 	initialMap, err := initMap()
 	if err != nil {
 		return
@@ -104,6 +115,7 @@ func NewMonitor(hostAddress, key, cryptoKey string, wg *sync.WaitGroup) (m Monit
 	m = &monitor{
 		metrics:     initialMap,
 		hostAddress: hostAddress,
+		hostGrpc:    hostGrpc,
 		key:         key,
 		cryptoKey:   cryptoKey,
 		wg:          wg,
@@ -400,9 +412,15 @@ func (m *monitor) ReportMetrics() (err error) {
 		return
 	})
 
+	realIP, err := getIP()
+	if err != nil {
+		return fmt.Errorf("failed to get IP: %w", err)
+	}
+
 	_, err = client.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Accept-Encoding", "gzip").
+		SetHeader("X-Real-Ip", realIP.IP.String()).
 		SetHeader("Rsa-Encrypted", strconv.FormatBool(m.cryptoKey != "")).
 		SetBody(metricsBytes).
 		Post(fmt.Sprintf("%v/updates/", m.hostAddress))
@@ -412,6 +430,74 @@ func (m *monitor) ReportMetrics() (err error) {
 
 	if err != nil {
 		return fmt.Errorf("failed to post updates: %w", err)
+	}
+	return
+}
+
+// ReportMetricsGrpc sends metrics by gRPC
+func (m *monitor) ReportMetricsGrpc() (err error) {
+	fmt.Println("reportMetrics gRPC")
+
+	if len(m.metrics) == 0 {
+		fmt.Println("empty batch")
+		return
+	}
+
+	var opts []grpc.DialOption
+
+	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	conn, err := grpc.Dial(m.hostGrpc, opts...)
+	if err != nil {
+		return fmt.Errorf("failed to dial gRPC server: %w", err)
+	}
+
+	defer conn.Close()
+
+	m.wg.Add(1)
+	defer m.wg.Done()
+
+	var metricsBatch pb.MetricsBatchRequest
+
+	for _, value := range m.metrics {
+		pbMetric := &pb.Metric{
+			Id:    value.ID,
+			Type:  value.MType,
+			Delta: value.Delta,
+			Value: value.Value,
+		}
+		metricsBatch.Metrics = append(metricsBatch.Metrics, pbMetric)
+	}
+
+	metricsBatch.Count = int32(len(metricsBatch.Metrics))
+
+	c := pb.NewMetricsServiceV1Client(conn)
+
+	ctx := context.TODO()
+	resp, err := c.MetricsBatchV1(ctx, &metricsBatch)
+
+	if err != nil {
+		return fmt.Errorf("failed to post updates: %w", err)
+	}
+
+	fmt.Println(resp)
+	return
+}
+
+func getIP() (realIP *net.IPNet, err error) {
+
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		err = fmt.Errorf("failed to get IPs: %w", err)
+		return
+	}
+
+	for _, addr := range addrs {
+		ipNet, ok := addr.(*net.IPNet)
+		if ok && !ipNet.IP.IsLoopback() && ipNet.IP.To4() != nil {
+			realIP = ipNet
+			break
+		}
 	}
 	return
 }
