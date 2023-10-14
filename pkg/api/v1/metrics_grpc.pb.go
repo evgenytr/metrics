@@ -27,6 +27,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MetricsServiceV1Client interface {
+	// MetricsBatchV1 processes array of metrics and saves them all at once
 	MetricsBatchV1(ctx context.Context, in *MetricsBatchRequest, opts ...grpc.CallOption) (*status.Status, error)
 }
 
@@ -51,6 +52,7 @@ func (c *metricsServiceV1Client) MetricsBatchV1(ctx context.Context, in *Metrics
 // All implementations must embed UnimplementedMetricsServiceV1Server
 // for forward compatibility
 type MetricsServiceV1Server interface {
+	// MetricsBatchV1 processes array of metrics and saves them all at once
 	MetricsBatchV1(context.Context, *MetricsBatchRequest) (*status.Status, error)
 	mustEmbedUnimplementedMetricsServiceV1Server()
 }
